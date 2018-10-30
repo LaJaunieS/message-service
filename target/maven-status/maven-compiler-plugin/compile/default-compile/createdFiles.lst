@@ -1,0 +1,13 @@
+com\stephanlajaunie\projects\messaging\dao\DAO.class
+com\stephanlajaunie\projects\messaging\service\Server$Session.class
+com\stephanlajaunie\projects\messaging\service\MessageStore.class
+com\stephanlajaunie\projects\messaging\accounts\AccountManager.class
+com\stephanlajaunie\projects\messaging\dao\AccountDAOs.class
+com\stephanlajaunie\projects\messaging\service\Message.class
+com\stephanlajaunie\projects\messaging\accounts\Account.class
+com\stephanlajaunie\projects\messaging\dao\FileDAO.class
+com\stephanlajaunie\projects\messaging\service\Server$1.class
+com\stephanlajaunie\projects\messaging\service\Server.class
+com\stephanlajaunie\projects\messaging\service\Client.class
+com\stephanlajaunie\projects\messaging\service\Protocol.class
+com\stephanlajaunie\projects\messaging\testApp\TestApp.class
