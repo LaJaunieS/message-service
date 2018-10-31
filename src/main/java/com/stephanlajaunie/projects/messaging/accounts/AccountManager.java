@@ -66,11 +66,14 @@ public class AccountManager {
             /*If the account doesn't exist, return false and quit...*/
             if (targetAccount != null) {
                 /*...If it does exist, verify the passwords match*/
-                this.authenticated = MessageDigest.isEqual(inputHashed, 
-                        targetAccount.getHashedPassword());
+                this.setAuthenticated(MessageDigest.isEqual(inputHashed, 
+                        targetAccount.getHashedPassword()));
             }
-            if (!authenticated) {
-                log.info("Unable to authenticate account");
+            if (!this.isAuthenticated()) {
+                log.info("Unable to authenticate account {}",accountName);
+                targetAccount = null;
+            } else {
+                log.info("Account {} was authenticated",accountName);
             }
         } catch (NoSuchAlgorithmException e) {
             log.info("Unable to find hash algorithm {}",ALGORITHM,e);
@@ -80,7 +83,7 @@ public class AccountManager {
     
     public MessageStore getMessages(Account account) throws SecurityException {
         MessageStore messages = null;
-        if (this.authenticated) {
+        if (this.isAuthenticated()) {
             messages = account.getMessages();
         } else {
             throw new SecurityException("Unable to delete messages from account" 
@@ -95,7 +98,7 @@ public class AccountManager {
     }
     
     public void removeMessage(Account account, Message message) throws SecurityException {
-        if (this.authenticated) {
+        if (this.isAuthenticated()) {
             account.getMessages().removeMessage(message); 
         } else {
             throw new SecurityException("Unable to delete messages from account" 
@@ -139,6 +142,10 @@ public class AccountManager {
     
     public boolean isAuthenticated() {
         return this.authenticated;
+    }
+    
+    private void setAuthenticated(boolean bool) {
+        this.authenticated = bool;
     }
     
 }

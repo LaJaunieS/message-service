@@ -85,7 +85,10 @@ public class Client {
                             System.out.println("Inititating connection to server at port " + client.PORT);
                             client.connect(client.PORT,Protocol.LOGIN.getInstance(username, password));
                         }
-                        
+                    } else if (command.equals("AUTHENTICATED")) {
+                            System.out.println("Checking if current account is connected to"
+                                    + "server...");
+                            client.connect(client.PORT,Protocol.getInstance("AUTHENTICATED"));
                     } else {
                         System.out.println("Invalid command. Try again or enter QUIT to exit.");
                     }

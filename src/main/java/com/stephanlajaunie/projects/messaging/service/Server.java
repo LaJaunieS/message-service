@@ -79,6 +79,10 @@ public class Server {
         
         @Override
         public void run() {
+            
+            /*TODO figure out a way to keep connection open until client issues a terminate command
+             * (in order to preserve state like authenticated)
+             */
             DAO dao = new FileDAO(); 
             AccountManager accountManager = new AccountManager(dao);
 
@@ -105,10 +109,11 @@ public class Server {
                     loginCommand = (Protocol.LOGIN) obj;
                     String accountName = loginCommand.getUsername();
                     String password = loginCommand.getPassword();
-                    boolean authenticated = false;
-                    accountManager.authenticateAccount(accountName, password);
-                    String response = new String(authenticated? "Account was authenticated": "Account was not authenticated");
-                    log.info("LOGIN command sent");
+                    /*TODO response should eventually be made an instance of Protocol as well*/
+                    String response = 
+                            (accountManager.authenticateAccount(accountName, password) == null)?
+                            "Account was not authenticated": "Account was authenticated"; 
+                    log.info("LOGIN command sent: {}",response);
                     oos.writeObject(response);
                 
                 } else {
@@ -117,6 +122,10 @@ public class Server {
                      * patter later*/
                     command = (Protocol) obj;
                     switch(command.toString()) {
+                        case "AUTHENTICATED": 
+                            String response = (accountManager.isAuthenticated())?
+                                    "Authenticated": "Not Authenticated";
+                            oos.writeObject(response);
                         case "READ":
                             //accountManager.getMessages(account)
                             break;

@@ -31,21 +31,23 @@ public class TestApp {
         /*Creating a new account manager*/
         AccountManager acctMgr = new AccountManager(new FileDAO());
         acctMgr.getDAO().clearDirectory();
-        /*Using hte account manager to create a new account*/
-        acctMgr.createAcccount("gWashington", "fourscore");
+        
+        /*Using hte account manager to create a new account
+         * (confirming it won't persist/create a duplicate account*/
+        acctMgr.createAcccount("aLincoln", "fourscore");
         
         acctMgr.createAcccount("slajaunie", "password1");
         acctMgr.createAcccount("slajaunie", "password2");
-        /*Using the account manager to authenticate user credentials (modeling a log in event)*/
-        //Account slajaunie = acctMgr.authenticateAccount("slajaunie", "password1");
-        //Account alincoln = acctMgr.authenticateAccount("gWashington", "cherrytree");
-        //log.info("Account created: {}", slajaunie.getUsername());
         
-        /*Using hte account manager to deliver messages to a users message store (modeling a received
+        /*Using the account manager to authenticate user credentials (modeling a log in event)*/
+        Account slajaunie = acctMgr.authenticateAccount("slajaunie", "password1");
+        Account alincoln = acctMgr.authenticateAccount("aLincoln", "fourscore");
+
+        /*Using the account manager to deliver messages to a users message store (modeling a received
          * send event from a client)
          */
-        //acctMgr.storeMessage(slajaunie, message);
-        //acctMgr.storeMessage(slajaunie, message2);
+//        acctMgr.storeMessage(slajaunie, message);
+//        acctMgr.storeMessage(slajaunie, message2);
 
         /*Confirming the messages were saved to the account's message store*/
 //        MessageStore messages = acctMgr.getMessages(slajaunie);

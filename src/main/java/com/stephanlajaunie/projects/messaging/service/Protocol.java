@@ -20,7 +20,18 @@ public class Protocol implements Serializable {
         this.value = value;
     }
     
+    public static Protocol getInstance(String value) {
+        return new Protocol(value);
+    }
+    
+    /*Test command*/
+    public static final String HELLO =  "HELLO";
+    
+    /*Test command*/
     public static final String CONNECT = "CONNECT";
+    
+    
+    public static final String AUTHENTICATED = "AUTHENTICATED";
     
     public static final String READ = "READ";
     
@@ -30,7 +41,6 @@ public class Protocol implements Serializable {
     
     public static final String QUIT = "QUIT";
     
-    public static final String HELLO =  "HELLO";
     
     @Override
     public String toString() {
