@@ -6,7 +6,7 @@ import com.stephanlajaunie.projects.messaging.service.MessageStore;
 
 public class Account implements Serializable {
     /*The messenger address(me@example.com) associated with this account*/
-    private String address;
+    private String username;
     
     private byte[] password;
     
@@ -14,8 +14,8 @@ public class Account implements Serializable {
     private MessageStore messages;
     
     
-    public Account(final String address,final byte[] password) {
-        this.address= address;
+    public Account(final String username,final byte[] password) {
+        this.username= username;
         this.password = password;
         this.messages = new MessageStore();
     }
@@ -23,8 +23,8 @@ public class Account implements Serializable {
         return this.messages;
     }
     
-    public String getAddress() {
-        return this.address;
+    public String getUsername() {
+        return this.username;
     }
     
     public byte[] getHashedPassword() {

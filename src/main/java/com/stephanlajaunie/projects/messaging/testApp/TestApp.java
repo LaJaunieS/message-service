@@ -13,6 +13,7 @@ import com.stephanlajaunie.projects.messaging.service.Message;
 import com.stephanlajaunie.projects.messaging.service.MessageStore;
 
 /**Will test and verify functionality of certain classes contained in this library
+ * Generates accounts and credentials for other apps
  * @author slajaunie
  *
  */
@@ -31,29 +32,32 @@ public class TestApp {
         AccountManager acctMgr = new AccountManager(new FileDAO());
         acctMgr.getDAO().clearDirectory();
         /*Using hte account manager to create a new account*/
-        acctMgr.createAcccount("slajaunie", "password1");
+        acctMgr.createAcccount("gWashington", "fourscore");
         
+        acctMgr.createAcccount("slajaunie", "password1");
+        acctMgr.createAcccount("slajaunie", "password2");
         /*Using the account manager to authenticate user credentials (modeling a log in event)*/
-        Account slajaunie = acctMgr.authenticateAccount("slajaunie", "password1");
-        log.info("Account created: {}", slajaunie);
+        //Account slajaunie = acctMgr.authenticateAccount("slajaunie", "password1");
+        //Account alincoln = acctMgr.authenticateAccount("gWashington", "cherrytree");
+        //log.info("Account created: {}", slajaunie.getUsername());
         
         /*Using hte account manager to deliver messages to a users message store (modeling a received
          * send event from a client)
          */
-        acctMgr.storeMessage(slajaunie, message);
-        acctMgr.storeMessage(slajaunie, message2);
+        //acctMgr.storeMessage(slajaunie, message);
+        //acctMgr.storeMessage(slajaunie, message2);
 
         /*Confirming the messages were saved to the account's message store*/
-        MessageStore messages = acctMgr.getMessages(slajaunie);
-        for (Message msg: messages.getMessageList()) {
-            System.out.println("Message #: " + messages.getMessageList().indexOf(msg));
-            System.out.println("From: " + msg.getSender());
-            System.out.println("To: " + msg.getRecipient());
-            System.out.println("Date: " + msg.getDateTime().toString());
-            System.out.println("Message: " +  msg.getData());
-            System.out.println("--------------------------------");
-            
-        }
+//        MessageStore messages = acctMgr.getMessages(slajaunie);
+//        for (Message msg: messages.getMessageList()) {
+//            System.out.println("Message #: " + messages.getMessageList().indexOf(msg));
+//            System.out.println("From: " + msg.getSender());
+//            System.out.println("To: " + msg.getRecipient());
+//            System.out.println("Date: " + msg.getDateTime().toString());
+//            System.out.println("Message: " +  msg.getData());
+//            System.out.println("--------------------------------");
+//            
+//        }
            
     }
 }

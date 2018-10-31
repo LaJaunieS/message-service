@@ -72,15 +72,16 @@ public class Server {
          */
         private static final long serialVersionUID = 1L;
         private Socket client;
-        private DAO dao = new FileDAO(); 
-        private AccountManager accountManager = new AccountManager(dao);
-
+        
         private Session(Socket client) {
             this.client = client;
         }
         
         @Override
         public void run() {
+            DAO dao = new FileDAO(); 
+            AccountManager accountManager = new AccountManager(dao);
+
             /*Get the i/o streams, for starters*/
             log.info("Connection accepted, thread starting");
             try {
@@ -94,31 +95,41 @@ public class Server {
                  * TODO Need to determine a safer way to do this
                  */
                 Object obj = ois.readObject();
+                Protocol command = null;
+                Protocol.LOGIN loginCommand = null;
                 if (!(obj instanceof Protocol)) {
                     log.warn("Command not recognized");
                     throw new ClassNotFoundException("Command must conform to required protocol. "
                             + "Command not recognized");
+                } else if (obj instanceof Protocol.LOGIN) {
+                    loginCommand = (Protocol.LOGIN) obj;
+                    String accountName = loginCommand.getUsername();
+                    String password = loginCommand.getPassword();
+                    boolean authenticated = false;
+                    accountManager.authenticateAccount(accountName, password);
+                    String response = new String(authenticated? "Account was authenticated": "Account was not authenticated");
+                    log.info("LOGIN command sent");
+                    oos.writeObject(response);
+                
                 } else {
                     /*Perform an action in resposne to the command
                      * TODO starting with switch statement, may switch to command
                      * patter later*/
-                    Protocol command = (Protocol) obj;
-                    switch(command) {
-                        case HELLO:
-                            //accountManager.authenticateAccount(accountName, password)
-                            log.info("HEllo command sent");
-                            oos.writeObject(new String("HELLO Received"));
-                            break;
-                        case READ:
+                    command = (Protocol) obj;
+                    switch(command.toString()) {
+                        case "READ":
                             //accountManager.getMessages(account)
                             break;
-                        case SEND:
+                        case "SEND":
                             //accountManager.storeMessage(account, message);
                             break;
-                        case DELETE:
+                        case "DELETE":
                             //accountManager.removeMessage(account, message);
                             break;
-                            
+                        default: 
+                            log.info("Command not recognized");
+                            oos.writeObject(new String("Command not recognized"));
+                            break;
                     }
                 }
                 

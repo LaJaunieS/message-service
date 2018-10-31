@@ -38,15 +38,14 @@ public class AccountManager {
     
     public boolean createAcccount(String accountName, String password) {
         boolean created = false;
-        /*Need to verify if username already exists...*/
         Account account = new Account(accountName, this.hashPassword(password));
-        if (!dao.checkDuplicateUserName(accountName)) {
+        log.info("Instantiated new Account {}, confirming a valid account",accountName);
+        if (dao.checkDuplicateUserName(accountName)) {
             created = dao.persistAccount(account);
-            log.info("Account created: {}",account.getAddress());
-            
+            log.info("Account created: {}",accountName);
         } else {
-            log.warn("Username already exists, unable to create"
-                    + "new account with duplicate username");
+            log.warn("Username {} already exists, unable to create"
+                    + "new account with duplicate username",accountName);
         }
         
         return created;
@@ -138,6 +137,8 @@ public class AccountManager {
         return this.dao;
     }
     
-    
+    public boolean isAuthenticated() {
+        return this.authenticated;
+    }
     
 }

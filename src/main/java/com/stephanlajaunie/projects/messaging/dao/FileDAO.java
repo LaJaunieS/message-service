@@ -44,7 +44,7 @@ public class FileDAO extends AccountDAOs implements DAO {
     public boolean persistAccount(Account account) {
         boolean updated = false;
         // TODO Auto-generated method stub
-        String accountName = account.getAddress();
+        String accountName = account.getUsername();
         File accountDirectory = new File(PARENT_DIRECTORY.toString(),accountName);
 //        File inboxDirectory = new File(accountDirectory.toString(),"inbox");
 //        File sentDirectory = new File(accountDirectory.toString(),"sent");
@@ -84,20 +84,26 @@ public class FileDAO extends AccountDAOs implements DAO {
     @Override
     public boolean checkDuplicateUserName(String accountName) {
         File[] listFiles = PARENT_DIRECTORY.listFiles();
-        boolean validUpdate = false;
+        log.info("Checking for duplicates in directory {}",PARENT_DIRECTORY);
+        boolean validUpdate = true;
         
         for (File directory: listFiles) {
+            log.info("Checking directory {} against proposed account name {} "
+                    + "for duplicate directory",directory.getName(),accountName);
             /*Go through each directory name and see if it matches the given
              * account's username
              * If there's a match, this is not a valid username as it already exists*/
             if (directory.getName().equals(accountName)) {
                 validUpdate = false;
-            } else {
+                log.info("Already a directory for {}, cannot create new Account",accountName);
                 /*Otherwise, should return true- Account Manager should allow 
                  * creation of new account*/
-                validUpdate = true;
+                break;
+            } else {
+                log.info("New account name is not a duplicate account: {}",validUpdate);
             }
-        }   
+        }
+        
         return validUpdate;
     }
 

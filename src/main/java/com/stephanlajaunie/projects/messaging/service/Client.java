@@ -37,12 +37,15 @@ public class Client {
     
     public Client() {    }
     
-    public void connect(int port) {
+    /**Initiates a connection with the server, then issues a command
+     * @param port
+     */
+    public void connect(int port, Protocol command) {
         try (Socket client = new Socket(this.addr,this.PORT)){
             ObjectInputStream is = new ObjectInputStream(client.getInputStream());
             ObjectOutputStream os = new ObjectOutputStream(client.getOutputStream());
             
-            os.writeObject(Protocol.HELLO);
+            os.writeObject(command);
             String response = (String) is.readObject();
             System.out.println("Command sent, received response from server: " + response);
         } catch (IOException e) {
@@ -52,6 +55,7 @@ public class Client {
             log.info("Unable to read response from server",e);
         }
     }
+    
     
     public static void main(String[] args) {
         Client client = new Client();
@@ -70,9 +74,18 @@ public class Client {
                         System.out.println("Exiting....");
                         open = false;
                         
-                    } else if (command.equals("CONNECT")) {
-                        System.out.println("Inititating connection to server at port " + client.PORT);
-                        client.connect(client.PORT);
+                    } else if (command.startsWith("LOGIN")) {
+                        String[] commandComponents = command.split(" ");
+                        if (commandComponents.length != 3) {
+                            System.out.println("LOGIN command should be in the following"
+                                    + "format: LOGIN <username> <password>");
+                        } else {
+                            String username = commandComponents[1];
+                            String password = commandComponents[2];
+                            System.out.println("Inititating connection to server at port " + client.PORT);
+                            client.connect(client.PORT,Protocol.LOGIN.getInstance(username, password));
+                        }
+                        
                     } else {
                         System.out.println("Invalid command. Try again or enter QUIT to exit.");
                     }
