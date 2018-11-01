@@ -137,7 +137,10 @@ public class Server {
                 oos.writeObject(response);
                 
                 connectionOpened = false;
-                
+            } else if (obj instanceof Protocol.HELLO) {
+                response = "HELLO command received. HELLO!";
+                log.info("HELLO command received");
+                oos.writeObject(response);
             } else if (obj instanceof Protocol.CMD_STRING) {
                 Protocol.CMD_STRING cmdString = (Protocol.CMD_STRING) obj;
                 

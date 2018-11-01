@@ -24,8 +24,6 @@ public class Protocol implements Serializable {
         return new Protocol(value);
     }
     
-    /*Test command*/
-    public static final String HELLO =  "HELLO";
     
     /*Test command*/
     public static final String CONNECT = "CONNECT";
@@ -37,8 +35,6 @@ public class Protocol implements Serializable {
     public static final String SEND = "SEND";
     
     public static final String DELETE = "DELETE";
-    
-    public static final String QUIT = "QUIT";
     
     
     /*Sent by server in response to authorization request from the client*/
@@ -61,6 +57,18 @@ public class Protocol implements Serializable {
         public static DISCONNECT getInstance() {
             DISCONNECT ds = new DISCONNECT();
             return ds;
+        }
+    }
+    
+    
+    public static class HELLO extends Protocol {
+        private HELLO() {
+            super("HELLO");
+        }
+        
+        public static HELLO getInstance() {
+            HELLO hello = new HELLO();
+            return hello;
         }
     }
     
