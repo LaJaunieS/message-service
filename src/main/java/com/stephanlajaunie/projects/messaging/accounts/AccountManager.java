@@ -81,10 +81,10 @@ public class AccountManager {
         return targetAccount;
     }
     
-    public MessageStore getMessages(Account account) throws SecurityException {
+    public MessageStore getMessages(String accountName) throws SecurityException {
         MessageStore messages = null;
         if (this.isAuthenticated()) {
-            messages = account.getMessages();
+            messages = this.getDAO().getAccount(accountName).getMessages();
         } else {
             throw new SecurityException("Unable to delete messages from account" 
                     + " without authentication");
@@ -92,9 +92,11 @@ public class AccountManager {
         return messages;
     }
     
-    public boolean storeMessage(Account account, Message message) {
-        MessageStore messageStore = account.getMessages();
-        return messageStore.addMessage(message);
+    public boolean storeMessage(String accountName, Message message) {
+        Account acct = this.getDAO().getAccount(accountName);
+        MessageStore messageStore = acct.getMessages();
+        messageStore.addMessage(message);
+        return this.getDAO().persistAccount(acct);
     }
     
     public void removeMessage(Account account, Message message) throws SecurityException {
@@ -131,7 +133,7 @@ public class AccountManager {
      * @param account
      * @return
      */
-    private Account getAccount(String accountName) {
+    public Account getAccount(String accountName) {
         Account acct = this.dao.getAccount(accountName);
         return acct;
     }

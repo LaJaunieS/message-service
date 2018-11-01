@@ -31,7 +31,6 @@ public class Protocol implements Serializable {
     public static final String CONNECT = "CONNECT";
     
     
-    public static final String AUTHENTICATED = "AUTHENTICATED";
     
     public static final String READ = "READ";
     
@@ -42,28 +41,77 @@ public class Protocol implements Serializable {
     public static final String QUIT = "QUIT";
     
     
+    /*Sent by server in response to authorization request from the client*/
+    public static final String AUTH_INVALID = "AUTH_INVALID";
+    
+    /*Sent by server in response to authorization request from the client*/
+    public static final String AUTH_VALID = "AUTH_VALID";
+    
     @Override
     public String toString() {
         return this.value; 
     }
     
-    public static class LOGIN extends Protocol {
+    
+    public static class DISCONNECT extends Protocol {
+        private DISCONNECT() {
+            super("DISCONNECT");
+        }
+        
+        public static DISCONNECT getInstance() {
+            DISCONNECT ds = new DISCONNECT();
+            return ds;
+        }
+    }
+    
+    /**Encapsulates an array/array list containing the entire command string,
+     * which will be compiled by the client and parsed by the server
+     * @author slajaunie
+     *
+     */
+    public static class CMD_STRING extends Protocol {
+        
+        private String cmdString = ""; 
+        
+        private CMD_STRING() {
+            super("CMD_STRING");
+        }
+        
+        public static CMD_STRING getInstance() {
+            CMD_STRING cmd = new CMD_STRING();
+            return cmd;
+        }
+        
+        public String concatenateCommandString(String command) {
+            cmdString += command.toString();
+            return cmdString;
+        }
+        
+        @Override
+        public String toString() {
+            return this.cmdString;
+        }
+    }
+    
+    
+    
+    public static class AUTH extends Protocol {
         private String username;
         private String password;
         public String getUsername() {
             return username;
         }
         
-        public LOGIN() {
-            super("LOGIN");
+        private AUTH() {
+            super("AUTH");
         }
         
-        public static LOGIN getInstance(String username,String password) {
-            LOGIN login = new LOGIN();
-            login.setUsername(username);
-            login.setPassword(password);
+        public static AUTH getInstance(String username,String password) {
+            AUTH auth = new AUTH();
+            auth.setUsername(username);
+            auth.setPassword(password);
             
-            return login;
+            return auth;
             
         }
 
@@ -80,6 +128,11 @@ public class Protocol implements Serializable {
         }
         public String getUserName(String username) {
             return username;
+        }
+        
+        @Override
+        public String toString() {
+            return new String("AUTH " + username + " " + password);
         }
         
         

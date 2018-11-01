@@ -30,4 +30,6 @@ public class Account implements Serializable {
     public byte[] getHashedPassword() {
         return this.password;
     }
+    
+    
 }

@@ -32,4 +32,23 @@ public class MessageStore implements Serializable {
     public List<Message> getMessageList() {
         return messages;
     }
+    
+    public String toString() { 
+        StringBuilder sb = new StringBuilder();
+        String ls = System.lineSeparator();
+        sb.append("________________________" + ls);
+        if (messages.size() == 0) {
+            sb.append("***no messages****" + ls);
+        } else {
+            for (Message msg : messages) {
+                sb.append("Recipient: " + msg.getRecipient() + ls);
+                sb.append("Sender: " + msg.getSender() + ls);
+                sb.append("Date: " + msg.getDateTime().toLocalDate() + ls);
+                sb.append("Message: " + msg.getData() + ls);
+                sb.append("-------------------------" + ls);
+                
+            }
+        }
+        return sb.toString();
+    }
 }

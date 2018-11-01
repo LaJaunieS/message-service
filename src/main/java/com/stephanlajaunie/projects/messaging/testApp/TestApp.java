@@ -46,20 +46,11 @@ public class TestApp {
         /*Using the account manager to deliver messages to a users message store (modeling a received
          * send event from a client)
          */
-//        acctMgr.storeMessage(slajaunie, message);
-//        acctMgr.storeMessage(slajaunie, message2);
+        acctMgr.storeMessage("slajaunie", message);
+        acctMgr.storeMessage("slajaunie", message2);
 
         /*Confirming the messages were saved to the account's message store*/
-//        MessageStore messages = acctMgr.getMessages(slajaunie);
-//        for (Message msg: messages.getMessageList()) {
-//            System.out.println("Message #: " + messages.getMessageList().indexOf(msg));
-//            System.out.println("From: " + msg.getSender());
-//            System.out.println("To: " + msg.getRecipient());
-//            System.out.println("Date: " + msg.getDateTime().toString());
-//            System.out.println("Message: " +  msg.getData());
-//            System.out.println("--------------------------------");
-//            
-//        }
-           
+        MessageStore messages = acctMgr.getMessages("slajaunie");
+        System.out.print(messages.toString());
     }
 }
