@@ -146,7 +146,14 @@ public class Server {
                 switch(actionCmd) {
                     case "READ":
                         String messages = accountManager.getAccount(accountName).getMessages().toString();
-                        oos.writeObject(messages);
+                        if (messages!=null) {
+                            oos.writeObject(messages);
+                        } else {
+                            /*If there's some internal issues retrieving account, don't want a 
+                             * null pointer- but accountName should already have been validated by this point
+                             */
+                            oos.writeObject(Protocol.CONSTANTS.ERROR);
+                        }
                         break;
                     case "SEND":
                         //TODO clean up some of this parsing
@@ -161,11 +168,10 @@ public class Server {
                         
                         //TODO make this a protocol-based response
                         if (saved) {
-                            oos.writeObject(new String("Message was successfully saved"));
+                            oos.writeObject(new String(Protocol.CONSTANTS.DELIVERED));
                         } else {
                             log.info("Could not locate user {}",recipient);
-                            oos.writeObject(new String("Message could not be delivered. " + 
-                                        "Unable to locate the given recipient."));
+                            oos.writeObject(new String(Protocol.CONSTANTS.UNDELIVERABLE));
                         }
                         break;
                     case "DELETE":

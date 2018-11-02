@@ -63,8 +63,6 @@ public class Client {
             /*Capture the response from the input stream*/
             response = (String) is.readObject();
             
-            System.out.println("Command sent, received response from server: ");
-            System.out.println(response);
             
             /*This command will access the i/o streams (to close them)
              * Response will be null*/
@@ -100,10 +98,9 @@ public class Client {
         while(open) {
             /*Show a prompt*/
             if (username == null && password == null) {
-                System.out.print("Enter LOGIN <username> <password> to begin session. " + ls
-                        + "Enter additional commands to continue (HELP for a list of commands). " + ls
+                System.out.print("Enter LOGIN <username> <password> to begin session. " + ls 
                         + "Enter DISCONNECT to exit" + ls);
-                
+                        
             } else {
                 System.out.print(String.join("",Collections.nCopies(5, ls)) + "Logged in as " + username + "."+ ls
                         + "Enter additional commands to continue (HELP for a list of commands). " + ls
@@ -130,14 +127,19 @@ public class Client {
                     response = client.connect(client.PORT,
                                     Protocol.AUTH.getInstance(  commandComponents[1],
                                                                 commandComponents[2]));
-                    if (response.equals("AUTH_VALID")) {
-                        username = commandComponents[1];
-                        password = commandComponents[2];
-                        System.out.println("Username and password successfully authenticated");
+                    if (response != null) {
+                        if (response.equals("AUTH_VALID")) {
+                            username = commandComponents[1];
+                            password = commandComponents[2];
+                            System.out.println("Username and password successfully authenticated");
+                        } else {
+                            System.out.println("Username and password could not be authenticated."
+                                    + "Please try again");
+                        }
                     } else {
-                        System.out.println("Username and password could not be authenticated."
-                                + "Please try again");
+                        System.out.println("No response from server");
                     }
+                    
                 }
             } else {
                 switch(command) {
@@ -165,7 +167,15 @@ public class Client {
                                         " " + Protocol.CONSTANTS.MESSAGE.toString() + " " + msg);
                             System.out.println("Command: " + cmd.toString());
                             response = client.connect(client.PORT, cmd);
-                            System.out.println(response);
+                            if (response.equals(Protocol.CONSTANTS.UNDELIVERABLE)) {
+                                System.out.println("Message could not be delivered. " + 
+                                        "Unable to locate the given recipient.");
+                            } else if (response.equals(Protocol.CONSTANTS.DELIVERED)){
+                                System.out.println("Message successfully sent");
+                            } else {
+                                System.out.println("Unrecognized response from server. Can not confirm"
+                                        + " message was sent");
+                            }
                         } else {
                             System.out.println("Please first provide login credentials via the LOGIN command.");
                         }
@@ -177,16 +187,19 @@ public class Client {
                          * AUTH <username> <password> READ
                          */
                         if (username != null && password != null) {
-                            System.out.println("Checking if credentials provided are valid");
+                            System.out.println("Retrieving messages...");
+                            System.out.println("Checking if credentials provided are valid...");
                             cmd.clear();
                             /*If valid, build and send the command string*/
                             cmd.append((Protocol.AUTH.getInstance(username, password)).toString());
-                            
                             cmd.append(" " + Protocol.CONSTANTS.READ.toString());
                             /*construct command string in the valid format*/
-                            System.out.println("Command: " + cmd.toString());
                             response = client.connect(client.PORT, cmd);
-                            System.out.println(response);
+                            if (response.equals(Protocol.CONSTANTS.ERROR)) {
+                                System.out.println("Unable to retrieve messages. Please try again");
+                            } else {
+                                System.out.println(response);
+                            }
                         } else {
                             System.out.println("Please provide login credentials via the LOGIN command.");
                         }
@@ -203,13 +216,19 @@ public class Client {
                         break;
                     case "HELLO":
                         System.out.println("Sending HELLO command to server (utility command to test "
-                                + "connection");
-                        client.connect(client.PORT, Protocol.HELLO.getInstance());
+                                + "connection)");
+                        response = client.connect(client.PORT, Protocol.CONSTANTS.HELLO.getInstance());
+                        if (response != null) {
+                            System.out.println(response);
+                        }
+                        /*any connection error will be caught by the connect() method*/
                         break;
                     case "HELP":
                         final String HELP_STRING = "Commands:" + ls + "______________" + ls 
                                 + "LOGIN <username> <password> - Begin new session with given credentials " + ls
                                 + "READ - View a list of all messages associated with the given session's account" + ls
+                                + "SEND - Send a single-line message to a valid account on the server. "
+                                + "Next prompts will be for Recipient information and message body" + ls
                                 + "DISCONNECT - End the session/connection and exit the program" + ls 
                                 + "__________________________________" + ls;
                         System.out.println(HELP_STRING);

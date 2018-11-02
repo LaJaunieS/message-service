@@ -27,8 +27,6 @@ public class Protocol implements Serializable {
     
     public static class CONSTANTS extends Protocol {
         
-        /*Test command*/
-        public static final String CONNECT = "CONNECT";
         
         public static final String READ = "READ";
         
@@ -36,7 +34,6 @@ public class Protocol implements Serializable {
         
         public static final String DELETE = "DELETE";
         
-        public static final String HELLO = "HELLO";
         
         /*Sent by server in response to authorization request from the client*/
         public static final String AUTH_INVALID = "AUTH_INVALID";
@@ -52,6 +49,15 @@ public class Protocol implements Serializable {
         public static final String SENDER = "SENDER";
         
         public static final String RECIP = "RECIP";
+        
+        /*Specifies a message was received and delivered to the intended recipient*/
+        public static final String DELIVERED = "DELIVERED";
+        
+        /*a general error*/
+        public static final String ERROR = "ERROR";
+        
+        /*an undeliverable error (e.g., user specified recipient that doesn't exist)*/
+        public static final String UNDELIVERABLE = "UNDELIVERABLE";
         
         private CONSTANTS() {
             super("CONSTANTS");
@@ -75,7 +81,7 @@ public class Protocol implements Serializable {
         }
     }
     
-    
+    /*Test command for confirming connection established*/
     public static class HELLO extends Protocol {
         private final static String VALUE = "HELLO";
         private HELLO() {
