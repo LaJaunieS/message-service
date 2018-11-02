@@ -20,38 +20,53 @@ public class Protocol implements Serializable {
         this.value = value;
     }
     
-    public static Protocol getInstance(String value) {
-        return new Protocol(value);
-    }
-    
-    
-    /*Test command*/
-    public static final String CONNECT = "CONNECT";
-    
-    
-    
-    public static final String READ = "READ";
-    
-    public static final String SEND = "SEND";
-    
-    public static final String DELETE = "DELETE";
-    
-    
-    /*Sent by server in response to authorization request from the client*/
-    public static final String AUTH_INVALID = "AUTH_INVALID";
-    
-    /*Sent by server in response to authorization request from the client*/
-    public static final String AUTH_VALID = "AUTH_VALID";
-    
     @Override
     public String toString() {
         return this.value; 
     }
     
+    public static class CONSTANTS extends Protocol {
+        
+        /*Test command*/
+        public static final String CONNECT = "CONNECT";
+        
+        public static final String READ = "READ";
+        
+        public static final String SEND = "SEND";
+        
+        public static final String DELETE = "DELETE";
+        
+        public static final String HELLO = "HELLO";
+        
+        /*Sent by server in response to authorization request from the client*/
+        public static final String AUTH_INVALID = "AUTH_INVALID";
+        
+        /*Sent by server in response to authorization request from the client*/
+        public static final String AUTH_VALID = "AUTH_VALID";
+        
+        /*Constants related to a SEND command*/
+        public static final String MESSAGE = "MESSAGE";
+        
+        public static final String END = "END";
+        
+        public static final String SENDER = "SENDER";
+        
+        public static final String RECIP = "RECIP";
+        
+        private CONSTANTS() {
+            super("CONSTANTS");
+        }
+        
+        public static CONSTANTS getInstance() {
+            CONSTANTS constants = new CONSTANTS();
+            return constants;
+        }
+    }
     
     public static class DISCONNECT extends Protocol {
+        private final static String VALUE = "DISCONNECT"; 
         private DISCONNECT() {
-            super("DISCONNECT");
+            super(VALUE);
         }
         
         public static DISCONNECT getInstance() {
@@ -62,8 +77,9 @@ public class Protocol implements Serializable {
     
     
     public static class HELLO extends Protocol {
+        private final static String VALUE = "HELLO";
         private HELLO() {
-            super("HELLO");
+            super(VALUE);
         }
         
         public static HELLO getInstance() {
@@ -78,11 +94,11 @@ public class Protocol implements Serializable {
      *
      */
     public static class CMD_STRING extends Protocol {
-        
+        private final static String VALUE = "CMD_STRING"; 
         private String cmdString = ""; 
         
         private CMD_STRING() {
-            super("CMD_STRING");
+            super(VALUE);
         }
         
         public static CMD_STRING getInstance() {
@@ -90,10 +106,15 @@ public class Protocol implements Serializable {
             return cmd;
         }
         
-        public String concatenateCommandString(String command) {
-            cmdString += command.toString();
-            return cmdString;
+        public String append(String command) {
+            this.cmdString += command.toString();
+            return this.cmdString;
         }
+        
+        public void clear() {
+            this.cmdString = "";
+        }
+        
         
         @Override
         public String toString() {
@@ -104,6 +125,7 @@ public class Protocol implements Serializable {
     
     
     public static class AUTH extends Protocol {
+        private static final String VALUE = "AUTH";
         private String username;
         private String password;
         public String getUsername() {
@@ -111,7 +133,7 @@ public class Protocol implements Serializable {
         }
         
         private AUTH() {
-            super("AUTH");
+            super(VALUE);
         }
         
         public static AUTH getInstance(String username,String password) {
@@ -120,7 +142,6 @@ public class Protocol implements Serializable {
             auth.setPassword(password);
             
             return auth;
-            
         }
 
         public void setUsername(String username) {
@@ -146,6 +167,7 @@ public class Protocol implements Serializable {
         
         
     }
+
     
     
     

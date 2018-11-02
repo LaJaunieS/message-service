@@ -94,9 +94,16 @@ public class AccountManager {
     
     public boolean storeMessage(String accountName, Message message) {
         Account acct = this.getDAO().getAccount(accountName);
-        MessageStore messageStore = acct.getMessages();
-        messageStore.addMessage(message);
-        return this.getDAO().persistAccount(acct);
+        boolean stored = false;
+        if (acct != null) {
+            MessageStore messageStore = acct.getMessages();
+            messageStore.addMessage(message);
+            this.getDAO().persistAccount(acct);
+            stored = true;
+        } else {
+            log.warn("Unable to locate the given account");
+        }
+        return stored;
     }
     
     public void removeMessage(Account account, Message message) throws SecurityException {

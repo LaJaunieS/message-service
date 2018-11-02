@@ -67,19 +67,15 @@ public class Server {
     public void store() {}
     
     private class Session implements Runnable, Serializable {
-        /**
-         * 
-         */
+
         private static final long serialVersionUID = 1L;
         private Socket client;
         
         private DAO dao = new FileDAO(); 
         private AccountManager accountManager = new AccountManager(dao);
-        private boolean connectionOpened = true;
         
         private Session(Socket client) {
             this.client = client;
-            log.info("*****Instantiating new Session with new Account MAnager*****");
         }
         
         @Override
@@ -128,33 +124,49 @@ public class Server {
                 String password = authCommand.getPassword().toString();
                 /*TODO response should eventually be made an instance of Protocol as well*/
                 response = (accountManager.authenticateAccount(accountName, password) == null)?
-                        Protocol.AUTH_INVALID: Protocol.AUTH_VALID; 
+                        Protocol.CONSTANTS.AUTH_INVALID: Protocol.CONSTANTS.AUTH_VALID; 
                 log.info("AUTH command sent: {}",response);
                 oos.writeObject(response);
             } else if (obj instanceof Protocol.DISCONNECT) {
-                response = "Disconnecting per client request";
                 log.info("Disconnecting from client...");
+                response = "Disconnecting per client request";
                 oos.writeObject(response);
                 
-                connectionOpened = false;
             } else if (obj instanceof Protocol.HELLO) {
-                response = "HELLO command received. HELLO!";
                 log.info("HELLO command received");
+                response = "HELLO command received. HELLO!";
                 oos.writeObject(response);
             } else if (obj instanceof Protocol.CMD_STRING) {
                 Protocol.CMD_STRING cmdString = (Protocol.CMD_STRING) obj;
-                
-                actionCmd = cmdString.toString().split(" ")[3];
-                accountName = cmdString.toString().split(" ")[1];
-                
+                String[] parsedCmd = cmdString.toString().split(" ");
+                actionCmd = parsedCmd[3];
+                accountName = parsedCmd[1];
                 log.info("Command String {} received",actionCmd);
+                
                 switch(actionCmd) {
                     case "READ":
                         String messages = accountManager.getAccount(accountName).getMessages().toString();
                         oos.writeObject(messages);
                         break;
                     case "SEND":
-                        //accountManager.storeMessage(account, message);
+                        //TODO clean up some of this parsing
+                        /*Parse the command to instantiate a new message; save that message with the
+                         * given account/recipient
+                         */
+                        String sender = parsedCmd[5];
+                        String recipient = parsedCmd[7];
+                        String[] body = Arrays.copyOfRange(parsedCmd, 9, parsedCmd.length);
+                        Message msg = new Message(sender,recipient,String.join(" ",body));
+                        boolean saved = accountManager.storeMessage(recipient, msg);
+                        
+                        //TODO make this a protocol-based response
+                        if (saved) {
+                            oos.writeObject(new String("Message was successfully saved"));
+                        } else {
+                            log.info("Could not locate user {}",recipient);
+                            oos.writeObject(new String("Message could not be delivered. " + 
+                                        "Unable to locate the given recipient."));
+                        }
                         break;
                     case "DELETE":
                         //accountManager.removeMessage(account, message);
