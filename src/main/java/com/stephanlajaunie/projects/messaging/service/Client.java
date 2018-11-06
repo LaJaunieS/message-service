@@ -84,6 +84,15 @@ public class Client {
         return response;
     }
     
+    private String buildCommand(Protocol.CMD_STRING cmd, String[] inputs) {
+        cmd.clear();
+        for (String input : inputs) {
+            cmd.append(input);
+            cmd.append(" ");
+        }
+        return cmd.toString();
+    }
+    
     
     public static void main(String[] args) {
         Client client = new Client();
@@ -93,6 +102,7 @@ public class Client {
         String password = null;
         String response; 
         String ls = System.lineSeparator();
+        String command;
         
         /*Open the program...*/
         while(open) {
@@ -107,7 +117,6 @@ public class Client {
                         + "Enter DISCONNECT to exit" + ls);
                 
             }
-            String command = "";
             try {
             input = new BufferedReader(new InputStreamReader(System.in));
             command= input.readLine();
@@ -149,7 +158,9 @@ public class Client {
                             String recipient = "";
                             String msg = "";
                             cmd.clear();
-                            
+                            /*Build command string in format 
+                             * AUTH <username> <password> SEND <sender> RECIP <recipient> MSG <msg>
+                             */
                             while (sending) {
                                 System.out.println("Send a message");
                                 System.out.println("Enter recipient: ");
@@ -160,11 +171,16 @@ public class Client {
                                 msg = input.readLine();
                                 sending = false;
                             }
-                            cmd.append((Protocol.AUTH.getInstance(username, password)).toString());
-                            cmd.append(" " + Protocol.CONSTANTS.SEND.toString() +  
-                                        " " + Protocol.CONSTANTS.SENDER.toString() + " " + username +  
-                                        " " + Protocol.CONSTANTS.RECIP.toString() + " " + recipient +  
-                                        " " + Protocol.CONSTANTS.MESSAGE.toString() + " " + msg);
+                            client.buildCommand(cmd, new String[]{
+                                    Protocol.AUTH.getInstance(username, password).toString(),
+                                    Protocol.CONSTANTS.SEND.toString(),
+                                    Protocol.CONSTANTS.SENDER.toString(),
+                                    username,
+                                    Protocol.CONSTANTS.RECIP.toString(),
+                                    recipient, 
+                                    Protocol.CONSTANTS.MESSAGE.toString(),
+                                    msg
+                            });
                             System.out.println("Command: " + cmd.toString());
                             response = client.connect(client.PORT, cmd);
                             if (response.equals(Protocol.CONSTANTS.UNDELIVERABLE)) {
@@ -189,10 +205,10 @@ public class Client {
                         if (username != null && password != null) {
                             System.out.println("Retrieving messages...");
                             System.out.println("Checking if credentials provided are valid...");
-                            cmd.clear();
                             /*If valid, build and send the command string*/
-                            cmd.append((Protocol.AUTH.getInstance(username, password)).toString());
-                            cmd.append(" " + Protocol.CONSTANTS.READ.toString());
+                            client.buildCommand(cmd, 
+                                    new String[]{ Protocol.AUTH.getInstance(username, password).toString(),
+                                                    Protocol.CONSTANTS.READ.toString() });
                             /*construct command string in the valid format*/
                             response = client.connect(client.PORT, cmd);
                             if (response.equals(Protocol.CONSTANTS.ERROR)) {
@@ -201,9 +217,100 @@ public class Client {
                                 System.out.println(response);
                             }
                         } else {
+                            //TODO save messages to variables, no string literals
                             System.out.println("Please provide login credentials via the LOGIN command.");
                         }
                         
+                        break;
+                    case "DELETE":
+                        /*User will enter DELETE- Client prompt user to enter which message to delete
+                         * (corresponding to message/index number); Client will then display a confirm
+                         * prompt- If user confirms, Client will build a command string in the format
+                         * AUTH <username> <password> DELETE <index or ALL>
+                         */
+                        boolean deleting = true;
+                        boolean confirming = true;
+                        String delInput = "";
+                        String delNumber;
+                        
+                        //Check if logged in
+                        if (username != null && password != null) {
+                            while(deleting) {
+                                System.out.println("Delete a message or messages");
+                                System.out.println("Enter the Message number you want to delete. Enter command ALL"
+                                        + " to delete all messages in your inbox. Enter command CANCEL to exit"
+                                        + " this operation");
+                                delInput = input.readLine();
+                                if (delInput.equals("ALL")) {
+                                /*If user elects to delete all messages...*/
+                                    delNumber = delInput;
+                                    while (confirming) {
+                                        /*confirm the entry*/
+                                        System.out.println("This will delete ALL messages. Are you sure? (Y/N)");
+                                        delInput = input.readLine();
+                                        if (delInput.equals("Y")) {
+                                            /*move forward with delete*/
+                                            client.buildCommand(cmd, 
+                                                    new String[] {(Protocol.AUTH.getInstance(username, password)).toString(),
+                                                                   Protocol.CONSTANTS.DELETE.toString(), 
+                                                                   delNumber } );
+                                            log.info("Command to be sent: {}",cmd.toString());
+                                            confirming = false;
+                                            deleting = false;
+                                        } else if (delInput.equals("N")){
+                                            /*cancel delete command*/
+                                            System.out.println("Cancelling delete command...");
+                                            confirming = false;
+                                            deleting = false;
+                                        } else {
+                                            /*if user enters an invalid option*/
+                                            System.out.println("You must confirm delete command before "
+                                                    + "proceeding.");
+                                        }
+                                    }
+                                } else if (delInput.equals("CANCEL")) {
+                                  deleting = false;  
+                                } else {
+                                /*If input is a specific message number...*/
+                                    try {
+                                        Integer.parseInt(delInput);
+                                        confirming = true;
+                                        /*confirm the entry*/
+                                        while(confirming) {
+                                            delNumber = delInput;
+                                            System.out.println("Deleting message number " + delInput + 
+                                                    ". Are you sure? (Y/N)");
+                                            delInput = input.readLine();
+                                            if (delInput.equals("Y")) {
+                                                /*move forward with delete*/
+                                                client.buildCommand(cmd, 
+                                                        new String[] {(Protocol.AUTH.getInstance(username, password)).toString(),
+                                                                       Protocol.CONSTANTS.DELETE.toString(), 
+                                                                       delNumber } );
+                                                log.info("Command to be sent: {}",cmd.toString());
+                                                confirming = false;
+                                                deleting = false;
+                                            } else if (delInput.equals("N")){
+                                                /*cancel delete command*/
+                                                System.out.println("Cancelling delete command...");
+                                                confirming = false;
+                                                deleting = false;
+                                            } else {
+                                                /*if user enters an invalid option*/
+                                                System.out.println("Invalid entry.");
+                                                confirming = false;
+                                                }
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        System.out.println("Valid input must be a number. Enter CANCEL to"
+                                                + " exit this operation");
+                                        
+                                    }
+                                }
+                            }
+                        } else {
+                            System.out.println("Please first provide login credentials via the LOGIN command.");
+                        }
                         break;
                     case "DISCONNECT":
                         System.out.println("Ending connection with the server...");

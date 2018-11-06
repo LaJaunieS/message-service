@@ -168,6 +168,7 @@ public class Server {
                         
                         //TODO make this a protocol-based response
                         if (saved) {
+                            log.info("Storing message in account {}",recipient);
                             oos.writeObject(new String(Protocol.CONSTANTS.DELIVERED));
                         } else {
                             log.info("Could not locate user {}",recipient);
