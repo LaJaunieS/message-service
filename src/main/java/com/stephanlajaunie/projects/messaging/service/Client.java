@@ -231,6 +231,7 @@ public class Client {
                         boolean deleting = true;
                         boolean confirming = true;
                         String delInput = "";
+                        /*specifically capture entry number (or ALL) during confirm operations*/
                         String delNumber;
                         
                         //Check if logged in
@@ -269,7 +270,7 @@ public class Client {
                                         }
                                     }
                                 } else if (delInput.equals("CANCEL")) {
-                                  deleting = false;  
+                                    deleting = false;  
                                 } else {
                                 /*If input is a specific message number...*/
                                     try {
