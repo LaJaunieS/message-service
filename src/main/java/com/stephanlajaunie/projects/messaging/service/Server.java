@@ -176,6 +176,9 @@ public class Server {
                         }
                         break;
                     case "DELETE":
+                        String messageNumber = parsedCmd[4];
+                        log.info("Delete command received for mesesage {}",messageNumber);
+                        oos.writeObject(new String(Protocol.CONSTANTS.DELETED));
                         //accountManager.removeMessage(account, message);
                         break;
                     default: 

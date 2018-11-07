@@ -18,22 +18,17 @@ import org.slf4j.LoggerFactory;
 
 import static com.stephanlajaunie.projects.messaging.service.ClientConstants.*;
 
-/**Encapsulates a Client, where the User interacts via the Console.
+/**Implements a Client, where the User interacts via the Console.
+ * Connects to the server via Port 4885
  * @inheritDoc 
  * @author slajaunie
  *
  */
 public class ClientConsole implements Client {
-    /*Methods:
-     * connect() 
-     * login()
-     * view()
-     * send()*/
     
     public static final Logger log = LoggerFactory.getLogger(ClientConsole.class);
     public int PORT = 4885;
     public InetAddress addr = InetAddress.getLoopbackAddress();
-    private final String ALGORITHM = "SHA-256";
     private String username;
     private String password;
     
@@ -41,8 +36,7 @@ public class ClientConsole implements Client {
      * would prefer to initialize when a client is instantiated*/
     private BufferedReader input = null;
     
-    
-    public ClientConsole() {    }
+    private ClientConsole() {    }
     
     /**Manages the connection with the server. Issues a command consistent with the 
      * given protocol and returns the response from the server, in the form of a String.
@@ -55,7 +49,7 @@ public class ClientConsole implements Client {
         String response = null;
         
         try {
-            log.debug(String.format(LOG_SEND_COMMAND,command.toString()));
+            log.info(String.format(LOG_SEND_COMMAND,command.toString()));
             Socket client = new Socket(this.addr,this.PORT);
         
             ObjectInputStream is = new ObjectInputStream(client.getInputStream());
@@ -198,6 +192,9 @@ public class ClientConsole implements Client {
                                     new String[] {(Protocol.AUTH.getInstance(this.username, this.password)).toString(),
                                                    Protocol.CONSTANTS.DELETE.toString(), 
                                                    delNumber } );
+                            response = this.connect(this.PORT, cmd);
+/*delete when completed*/   System.out.println("Received response: " + response);
+                            
                             confirming = false;
                             deleting = false;
                         } else if (delInput.equals("N")){
@@ -228,6 +225,8 @@ public class ClientConsole implements Client {
                                         new String[] {(Protocol.AUTH.getInstance(this.username, this.password)).toString(),
                                                        Protocol.CONSTANTS.DELETE.toString(), 
                                                        delNumber } );
+                                response = this.connect(this.PORT, cmd);
+    /*delete when completed*/   System.out.println("Received response: " + response);
                                 confirming = false;
                                 deleting = false;
                             } else if (delInput.equals("N")){
