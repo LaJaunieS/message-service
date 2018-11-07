@@ -16,6 +16,8 @@ import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.stephanlajaunie.projects.messaging.service.ClientConstants.*;
+
 /**Encapsulates a Client, where the User interacts via the Console.
  * @inheritDoc 
  * @author slajaunie
@@ -34,70 +36,11 @@ public class ClientConsole implements Client {
     private final String ALGORITHM = "SHA-256";
     private String username;
     private String password;
+    
     /*The input from which commands will be read- TODO need to initialize here or catch null pointers;
      * would prefer to initialize when a client is instantiated*/
     private BufferedReader input = null;
     
-    /*Message constants*/
-    private static final String LS = System.lineSeparator();
-    private static final String NOT_LOGGED_IN = "Please provide login credentials via the LOGIN command.";
-    
-    private static final String LOG_SEND_COMMAND = "Will send command to server: %s";
-    
-    private static final String LOG_READ_ACTION  = "Retrieving messages..." + LS + "Checking if credentials provided are valid...";
-    private static final String LOG_READ_ERROR = "Unable to retrieve messages. Please try again";
-    
-    private static final String LOG_SEND_ACTION = "Send a message";
-    private static final String LOG_SEND_RECIP_OPTION = "Recipient: %s";
-    private static final String LOG_SEND_MSG_OPTION = "Enter a single-line message. " + LS 
-            + "Hit the ENTER key to finish composing message: ";
-    private static final String LOG_UNDELIVERABLE_MSG_ERROR = "Message could not be delivered. " + 
-            "Unable to locate the given recipient.";
-    private static final String LOG_MSG_SUCCESS = "Message successfully sent";
-    private static final String LOG_UNRECOGNIZED_SENT_RESP_ERROR = "Unrecognized response from server. Can not confirm"
-            + " message was sent";
-    
-    private static final String LOG_DELETE_ACTION = "Delete a message or messages" + LS + 
-            "Enter the Message number you want to delete. Enter command ALL" +
-            " to delete all messages in your inbox. Enter command CANCEL to exit" +
-            " this operation";
-    private static final String LOG_DELETE_CONFIRM_ALL = "This will delete ALL messages. This cannot be undone. Are you sure? (Y/N)";
-    private static final String LOG_DELETE_CONFIRM_CANCEL = "Cancelling delete command...";
-    private static final String LOG_DELETE_CONFIRM_ERROR = "You must confirm delete command before proceeding.";
-    private static  final String LOG_DELETE_CONFIRM_SINGLE = "Deleting message number %s."
-            + " This cannot be undone. Are you sure? (Y/N)";
-    private static final String LOG_DELETE_INVALID_OPTION = "Valid input must be a number. Enter CANCEL to"
-            + " exit this operation";
-    
-    private static final String LOG_LOGIN_INVALID_ARG = "LOGIN command should be in the following"
-            + "format: LOGIN <username> <password>";
-    private static final String LOG_LOGIN_INIT_CONTACT = "Inititating connection to server at port %s";
-    private static final String LOG_LOGIN_AUTH_SUCCESS = "Username and password successfully authenticated";
-    private static final String LOG_LOGIN_AUTH_FAIL = "Username and password could not be authenticated."
-            + "Please try again";
-    private static final String LOG_NO_SERVER_RESPONSE = "No response from server. Unable to login";
-    
-    private static final String PROMPT_NOT_LOGGED_IN = "Enter LOGIN <username> <password> to begin session." + 
-            LS + "Enter DISCONNECT to exit";
-    private static final String CONFIRM_LOGGED_IN = String.join("",Collections.nCopies(5, LS)) + "Logged in as %s.";
-    private static final String PROMPT_LOGGED_IN = "Enter additional commands to continue (HELP for a list of commands)"
-            + LS + "Enter DISCONNECT to exit";
-    
-    private static final String HELLO_CMD_STATUS = "Sending HELLO command to server (utility command to test "
-            + "connection)";
-    
-    private static final String HELP_SCREEN = "Commands:" + LS + "______________" + LS 
-            + "LOGIN <username> <password> - Begin new session with given credentials " + LS
-            + "READ - View a list of all messages associated with the given session's account" + LS
-            + "SEND - Send a single-line message to a valid account on the server. "
-            + "Next prompts will be for Recipient information and message body" + LS
-            + "DISCONNECT - End the session/connection and exit the program" + LS 
-            + "__________________________________" + LS;
-    
-    private static final String PROGRAM_INVALID_COMMAND = "Invalid command. Try again or enter QUIT to exit.";
-    private static final String PROGRAM_INPUT_ERROR = "There was a problem reading the command from the console."
-            + "Exiting program";
-    private static final String PROGRAM_CONFIRM_CLOSING = "Program has closed";
     
     public ClientConsole() {    }
     
@@ -110,6 +53,7 @@ public class ClientConsole implements Client {
      */
     public String connect(final int port, final Protocol command) {
         String response = null;
+        
         try {
             log.debug(String.format(LOG_SEND_COMMAND,command.toString()));
             Socket client = new Socket(this.addr,this.PORT);
