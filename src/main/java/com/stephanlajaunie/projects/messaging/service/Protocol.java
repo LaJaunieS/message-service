@@ -92,6 +92,11 @@ public class Protocol implements Serializable {
             HELLO hello = new HELLO();
             return hello;
         }
+        
+        public static String getValue() {
+            return "HELLO";
+        }
+        
     }
     
     /**Encapsulates an array/array list containing the entire command string,

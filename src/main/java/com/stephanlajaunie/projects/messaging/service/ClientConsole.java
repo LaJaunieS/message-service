@@ -38,6 +38,67 @@ public class ClientConsole implements Client {
      * would prefer to initialize when a client is instantiated*/
     private BufferedReader input = null;
     
+    /*Message constants*/
+    private static final String LS = System.lineSeparator();
+    private static final String NOT_LOGGED_IN = "Please provide login credentials via the LOGIN command.";
+    
+    private static final String LOG_SEND_COMMAND = "Will send command to server: %s";
+    
+    private static final String LOG_READ_ACTION  = "Retrieving messages..." + LS + "Checking if credentials provided are valid...";
+    private static final String LOG_READ_ERROR = "Unable to retrieve messages. Please try again";
+    
+    private static final String LOG_SEND_ACTION = "Send a message";
+    private static final String LOG_SEND_RECIP_OPTION = "Recipient: %s";
+    private static final String LOG_SEND_MSG_OPTION = "Enter a single-line message. " + LS 
+            + "Hit the ENTER key to finish composing message: ";
+    private static final String LOG_UNDELIVERABLE_MSG_ERROR = "Message could not be delivered. " + 
+            "Unable to locate the given recipient.";
+    private static final String LOG_MSG_SUCCESS = "Message successfully sent";
+    private static final String LOG_UNRECOGNIZED_SENT_RESP_ERROR = "Unrecognized response from server. Can not confirm"
+            + " message was sent";
+    
+    private static final String LOG_DELETE_ACTION = "Delete a message or messages" + LS + 
+            "Enter the Message number you want to delete. Enter command ALL" +
+            " to delete all messages in your inbox. Enter command CANCEL to exit" +
+            " this operation";
+    private static final String LOG_DELETE_CONFIRM_ALL = "This will delete ALL messages. This cannot be undone. Are you sure? (Y/N)";
+    private static final String LOG_DELETE_CONFIRM_CANCEL = "Cancelling delete command...";
+    private static final String LOG_DELETE_CONFIRM_ERROR = "You must confirm delete command before proceeding.";
+    private static  final String LOG_DELETE_CONFIRM_SINGLE = "Deleting message number %s."
+            + " This cannot be undone. Are you sure? (Y/N)";
+    private static final String LOG_DELETE_INVALID_OPTION = "Valid input must be a number. Enter CANCEL to"
+            + " exit this operation";
+    
+    private static final String LOG_LOGIN_INVALID_ARG = "LOGIN command should be in the following"
+            + "format: LOGIN <username> <password>";
+    private static final String LOG_LOGIN_INIT_CONTACT = "Inititating connection to server at port %s";
+    private static final String LOG_LOGIN_AUTH_SUCCESS = "Username and password successfully authenticated";
+    private static final String LOG_LOGIN_AUTH_FAIL = "Username and password could not be authenticated."
+            + "Please try again";
+    private static final String LOG_NO_SERVER_RESPONSE = "No response from server. Unable to login";
+    
+    private static final String PROMPT_NOT_LOGGED_IN = "Enter LOGIN <username> <password> to begin session." + 
+            LS + "Enter DISCONNECT to exit";
+    private static final String CONFIRM_LOGGED_IN = String.join("",Collections.nCopies(5, LS)) + "Logged in as %s.";
+    private static final String PROMPT_LOGGED_IN = "Enter additional commands to continue (HELP for a list of commands)"
+            + LS + "Enter DISCONNECT to exit";
+    
+    private static final String HELLO_CMD_STATUS = "Sending HELLO command to server (utility command to test "
+            + "connection)";
+    
+    private static final String HELP_SCREEN = "Commands:" + LS + "______________" + LS 
+            + "LOGIN <username> <password> - Begin new session with given credentials " + LS
+            + "READ - View a list of all messages associated with the given session's account" + LS
+            + "SEND - Send a single-line message to a valid account on the server. "
+            + "Next prompts will be for Recipient information and message body" + LS
+            + "DISCONNECT - End the session/connection and exit the program" + LS 
+            + "__________________________________" + LS;
+    
+    private static final String PROGRAM_INVALID_COMMAND = "Invalid command. Try again or enter QUIT to exit.";
+    private static final String PROGRAM_INPUT_ERROR = "There was a problem reading the command from the console."
+            + "Exiting program";
+    private static final String PROGRAM_CONFIRM_CLOSING = "Program has closed";
+    
     public ClientConsole() {    }
     
     /**Manages the connection with the server. Issues a command consistent with the 
@@ -50,7 +111,7 @@ public class ClientConsole implements Client {
     public String connect(final int port, final Protocol command) {
         String response = null;
         try {
-            log.debug("Sending command {}",command.toString());
+            log.debug(String.format(LOG_SEND_COMMAND,command.toString()));
             Socket client = new Socket(this.addr,this.PORT);
         
             ObjectInputStream is = new ObjectInputStream(client.getInputStream());
@@ -62,10 +123,10 @@ public class ClientConsole implements Client {
             response = (String) is.readObject();
             
             
-            /*This command will access the i/o streams (to close them)
+            /*This command case will access the i/o streams (to close them)
              * Response will be null*/
             if (command.toString().equals("DISCONNECT")) {
-                log.debug("Disconnect command");
+                log.debug(String.format(LOG_SEND_COMMAND,"DISCONNECT"));
                 is.close();
                 os.close();
                 client.close();
@@ -76,7 +137,6 @@ public class ClientConsole implements Client {
         } catch (IOException e) {
             log.info("There was a problem connecting to the Server socket",e);
         } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
             log.info("Unable to read response from server",e);
         }
         return response;
@@ -99,23 +159,21 @@ public class ClientConsole implements Client {
          */
         if (this.username != null && this.password != null) {
             Protocol.CMD_STRING cmd = Protocol.CMD_STRING.getInstance();
-            System.out.println("Retrieving messages...");
-            System.out.println("Checking if credentials provided are valid...");
+            System.out.println(LOG_READ_ACTION);
             /*If valid, build and send the command string*/
             this.buildCommand(cmd, 
                     new String[]{ Protocol.AUTH.getInstance(this.username, this.password).toString(),
                                     Protocol.CONSTANTS.READ.toString() });
-            log.info("Will send command {}",cmd);
             /*construct command string in the valid format*/
             response = this.connect(this.PORT, cmd);
             if (response.equals(Protocol.CONSTANTS.ERROR)) {
-                System.out.println("Unable to retrieve messages. Please try again");
+                System.out.println(LOG_READ_ERROR);
             } else {
                 System.out.println(response);
             }
         } else {
             //TODO save messages to variables, no string literals
-            System.out.println("Please provide login credentials via the LOGIN command.");
+            System.out.println(NOT_LOGGED_IN);
         }
         
     }
@@ -130,12 +188,11 @@ public class ClientConsole implements Client {
              * AUTH <username> <password> SEND <sender> RECIP <recipient> MSG <msg>
              */
             while (sending) {
-                System.out.println("Send a message");
+                System.out.println(LOG_SEND_ACTION);
                 System.out.println("Enter recipient: ");
                 recipient = this.input.readLine();
-                log.info("Recipient: {}",recipient);
-                System.out.println("Enter a single-line message. "
-                        + "Hit the ENTER key to finish composing message: ");
+                log.info(String.format(LOG_SEND_RECIP_OPTION,recipient));
+                System.out.println(LOG_SEND_MSG_OPTION);
                 msg = this.input.readLine();
                 sending = false;
             }
@@ -149,19 +206,17 @@ public class ClientConsole implements Client {
                     Protocol.CONSTANTS.MESSAGE.toString(),
                     msg
             });
-            System.out.println("Command: " + cmd.toString());
+            
             response = this.connect(this.PORT, cmd);
             if (response.equals(Protocol.CONSTANTS.UNDELIVERABLE)) {
-                System.out.println("Message could not be delivered. " + 
-                        "Unable to locate the given recipient.");
+                System.out.println(LOG_UNDELIVERABLE_MSG_ERROR);
             } else if (response.equals(Protocol.CONSTANTS.DELIVERED)){
-                System.out.println("Message successfully sent");
+                System.out.println(LOG_MSG_SUCCESS);
             } else {
-                System.out.println("Unrecognized response from server. Can not confirm"
-                        + " message was sent");
+                System.out.println(LOG_UNRECOGNIZED_SENT_RESP_ERROR);
             }
         } else {
-            System.out.println("Please first provide login credentials via the LOGIN command.");
+            System.out.println(NOT_LOGGED_IN);
         }
         /*-create an inner loop prompting for sender and message
          * compile into a command string to send to Server*/
@@ -184,17 +239,14 @@ public class ClientConsole implements Client {
         if (this.username != null && this.password != null) {
             Protocol.CMD_STRING cmd = Protocol.CMD_STRING.getInstance();
             while(deleting) {
-                System.out.println("Delete a message or messages");
-                System.out.println("Enter the Message number you want to delete. Enter command ALL"
-                        + " to delete all messages in your inbox. Enter command CANCEL to exit"
-                        + " this operation");
+                System.out.println(LOG_DELETE_ACTION);
                 delInput = input.readLine();
                 if (delInput.equals("ALL")) {
                 /*If user elects to delete all messages...*/
                     delNumber = delInput;
                     while (confirming) {
                         /*confirm the entry*/
-                        System.out.println("This will delete ALL messages. Are you sure? (Y/N)");
+                        System.out.println(LOG_DELETE_CONFIRM_ALL);
                         delInput = input.readLine();
                         if (delInput.equals("Y")) {
                             /*move forward with delete*/
@@ -202,18 +254,16 @@ public class ClientConsole implements Client {
                                     new String[] {(Protocol.AUTH.getInstance(this.username, this.password)).toString(),
                                                    Protocol.CONSTANTS.DELETE.toString(), 
                                                    delNumber } );
-                            log.info("Command to be sent: {}",cmd.toString());
                             confirming = false;
                             deleting = false;
                         } else if (delInput.equals("N")){
                             /*cancel delete command*/
-                            System.out.println("Cancelling delete command...");
+                            System.out.println(LOG_DELETE_CONFIRM_CANCEL);
                             confirming = false;
                             deleting = false;
                         } else {
                             /*if user enters an invalid option*/
-                            System.out.println("You must confirm delete command before "
-                                    + "proceeding.");
+                            System.out.println(LOG_DELETE_CONFIRM_ERROR);
                         }
                     }
                 } else if (delInput.equals("CANCEL")) {
@@ -226,8 +276,7 @@ public class ClientConsole implements Client {
                         /*confirm the entry*/
                         while(confirming) {
                             delNumber = delInput;
-                            System.out.println("Deleting message number " + delInput + 
-                                    ". Are you sure? (Y/N)");
+                            System.out.println(String.format(LOG_DELETE_CONFIRM_SINGLE,delNumber));
                             delInput = input.readLine();
                             if (delInput.equals("Y")) {
                                 /*move forward with delete*/
@@ -235,29 +284,27 @@ public class ClientConsole implements Client {
                                         new String[] {(Protocol.AUTH.getInstance(this.username, this.password)).toString(),
                                                        Protocol.CONSTANTS.DELETE.toString(), 
                                                        delNumber } );
-                                log.info("Command to be sent: {}",cmd.toString());
                                 confirming = false;
                                 deleting = false;
                             } else if (delInput.equals("N")){
                                 /*cancel delete command*/
-                                System.out.println("Cancelling delete command...");
+                                System.out.println(LOG_DELETE_CONFIRM_CANCEL);
                                 confirming = false;
                                 deleting = false;
                             } else {
                                 /*if user enters an invalid option*/
-                                System.out.println("Invalid entry.");
+                                System.out.println(LOG_DELETE_CONFIRM_ERROR);
                                 confirming = false;
                                 }
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println("Valid input must be a number. Enter CANCEL to"
-                                + " exit this operation");
+                        System.out.println(LOG_DELETE_INVALID_OPTION);
                         
                     }
                 }
             }
         } else {
-            System.out.println("Please first provide login credentials via the LOGIN command.");
+            System.out.println(NOT_LOGGED_IN);
         }
         return response;
     }
@@ -265,23 +312,21 @@ public class ClientConsole implements Client {
     public String loginAction(final String command, String response) throws IOException {
         String[] commandComponents = command.split(" ");
         if (commandComponents.length != 3) {
-            System.out.println("LOGIN command should be in the following"
-                    + "format: LOGIN <username> <password>");
+            System.out.println(LOG_LOGIN_INVALID_ARG);
         } else {
-            System.out.println("Inititating connection to server at port " + this.PORT);
+            System.out.println(String.format(LOG_LOGIN_INIT_CONTACT,this.PORT));
             response = this.connect(this.PORT,
                             Protocol.AUTH.getInstance(  commandComponents[1],
                                                         commandComponents[2]));
             if (response != null) {
                 if (response.equals("AUTH_VALID")) {
                     setCredentials(commandComponents[1],commandComponents[2]);
-                    System.out.println("Username and password successfully authenticated");
+                    System.out.println(LOG_LOGIN_AUTH_SUCCESS);
                 } else {
-                    System.out.println("Username and password could not be authenticated."
-                            + "Please try again");
+                    System.out.println(LOG_LOGIN_AUTH_FAIL);
                 }
             } else {
-                System.out.println("No response from server");
+                System.out.println(LOG_NO_SERVER_RESPONSE);
             }
             
         }
@@ -291,6 +336,10 @@ public class ClientConsole implements Client {
     private void setCredentials(final String username, final String password) {
         this.username = username;
         this.password = password;
+    }
+    
+    private void setInput(BufferedReader input) {
+        this.input = input;
     }
     
     /**Builds the command string by appending the elements of String[] inputs
@@ -312,7 +361,6 @@ public class ClientConsole implements Client {
     public static void main(String[] args) {
         ClientConsole client = new ClientConsole();
         boolean open = true;
-        BufferedReader input = null;
         String response = null; 
         String ls = System.lineSeparator();
         String command;
@@ -321,18 +369,14 @@ public class ClientConsole implements Client {
         while(open) {
             /*Show a prompt*/
             if (client.username == null && client.password == null) {
-                System.out.print("Enter LOGIN <username> <password> to begin session. " + ls 
-                        + "Enter DISCONNECT to exit" + ls);
-                        
+                System.out.println(PROMPT_NOT_LOGGED_IN);
             } else {
-                System.out.print(String.join("",Collections.nCopies(5, ls)) + "Logged in as " + client.username + "."+ ls
-                        + "Enter additional commands to continue (HELP for a list of commands). " + ls
-                        + "Enter DISCONNECT to exit" + ls);
-                
+                System.out.println(String.format(CONFIRM_LOGGED_IN,client.username));
+                System.out.println(PROMPT_LOGGED_IN);
             }
             try {
-            client.input = new BufferedReader(new InputStreamReader(System.in));
-            command= client.input.readLine();
+            client.setInput(new BufferedReader(new InputStreamReader(System.in)));
+            command = client.input.readLine();
             Protocol.CMD_STRING cmd = Protocol.CMD_STRING.getInstance();
             
             /*LOGIN - Assigns username and password to this client instance
@@ -343,13 +387,13 @@ public class ClientConsole implements Client {
                 client.loginAction(command, response);
             } else {
                 switch(command) {
-                    case "SEND":
+                    case Protocol.CONSTANTS.SEND:
                         client.sendAction(command, response);
                         break;
-                    case "READ":
+                    case Protocol.CONSTANTS.READ:
                         client.readAction(command, response);
                         break;
-                    case "DELETE":
+                    case Protocol.CONSTANTS.DELETE:
                         client.deleteAction(command, response);
                         break;
                     case "DISCONNECT":
@@ -357,8 +401,7 @@ public class ClientConsole implements Client {
                         open = false;
                         break;
                     case "HELLO":
-                        System.out.println("Sending HELLO command to server (utility command to test "
-                                + "connection)");
+                        System.out.println(HELLO_CMD_STATUS);
                         response = client.connect(client.PORT, Protocol.CONSTANTS.HELLO.getInstance());
                         if (response != null) {
                             System.out.println(response);
@@ -366,24 +409,17 @@ public class ClientConsole implements Client {
                         /*any connection error will be caught by the connect() method*/
                         break;
                     case "HELP":
-                        final String HELP_STRING = "Commands:" + ls + "______________" + ls 
-                                + "LOGIN <username> <password> - Begin new session with given credentials " + ls
-                                + "READ - View a list of all messages associated with the given session's account" + ls
-                                + "SEND - Send a single-line message to a valid account on the server. "
-                                + "Next prompts will be for Recipient information and message body" + ls
-                                + "DISCONNECT - End the session/connection and exit the program" + ls 
-                                + "__________________________________" + ls;
-                        System.out.println(HELP_STRING);
+                        System.out.println(HELP_SCREEN);
                         break;
                     default:
-                        System.out.println("Invalid command. Try again or enter QUIT to exit.");
+                        System.out.println(PROGRAM_INVALID_COMMAND);
                     }   
                 }
             } catch (IOException e) {
-                log.warn("There was a problem reading the command from the console",e);
+                log.warn(PROGRAM_INPUT_ERROR,e);
             }
         }
 
-        System.out.println("Program has closed");
+        System.out.println(PROGRAM_CONFIRM_CLOSING);
     }
 }
