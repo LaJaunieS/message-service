@@ -38,6 +38,8 @@ public class Server {
     public static final String LOG_CONFIRM_LISTENING = "Server is listening at port %s...";
     public static final String LOG_CONFIRM_SHUTDOWN = "Server connection shutting down...";
     public static final String LOG_CONFIRM_ACCEPT = "Connection accepted, thread starting";
+    public static final String LOG_CONFIRM_DISCONNECT = "Confirmed disconnect with client";
+    public static final String LOG_CONFIRM_HELLO = "Sent HELLO command to client";
     public static final String ERROR_STREAM_EXCEPTION = "There was a problem accessing the input/output stream(s)";
     public static final String ERROR_CLASS_EXCEPTION = "Object type not recognized";
     public static final String ERROR_CMD_NOT_RECOGNIZED = "Command not recognized. Command must conform to "
@@ -71,6 +73,7 @@ public class Server {
             while (isActive) {
                 log.info(String.format(LOG_CONFIRM_LISTENING,this.port));
                 service.execute(new Session(serverSocket.accept()));
+                log.info(String.format(LOG_CONFIRM_LISTENING,this.port));
             }
         } catch (IOException e){
             log.info(LOG_CONFIRM_SHUTDOWN,e);
@@ -120,7 +123,6 @@ public class Server {
         }
         
         private void processObject(ObjectOutputStream oos, Object obj) throws ClassNotFoundException, IOException {
-            Protocol command = null;
             String accountName = null;
             String password = null;
             
@@ -140,15 +142,17 @@ public class Server {
                 oos.writeObject(response);
             } else if (obj instanceof Protocol.DISCONNECT) {
                 log.info(String.format(LOG_COMMAND_RECEIVED,Protocol.DISCONNECT.getValue()));
+                log.info(LOG_CONFIRM_DISCONNECT);
                 oos.writeObject(Protocol.DISCONNECT.getValue());
             } else if (obj instanceof Protocol.HELLO) {
                 log.info(String.format(LOG_COMMAND_RECEIVED,Protocol.HELLO.getValue()));
+                log.info(LOG_CONFIRM_HELLO);
                 response = String.format(Protocol.HELLO.getValue());
                 oos.writeObject(response);
             } else if (obj instanceof Protocol.CMD_STRING) {
                 Protocol.CMD_STRING cmdString = (Protocol.CMD_STRING) obj;
                 String[] parsedCmd = cmdString.toString().split(" ");
-                String actionCmd = parsedCmd[3];
+                String actionCmd = null;
                 accountName = parsedCmd[1];
                 password = parsedCmd[2];
                 
@@ -156,8 +160,9 @@ public class Server {
                 if (!this.authenticate(accountName, password)) {
                     response = Protocol.CONSTANTS.AUTH_INVALID;
                 } else {
-                    log.info(String.format(LOG_COMMAND_RECEIVED,actionCmd));
                     actionCmd = parsedCmd[3];
+                    log.info(String.format(LOG_COMMAND_RECEIVED,actionCmd));
+                    
                     switch(actionCmd) {
                     case "READ":
                         String messages = accountManager.getMessages(accountName).toString();
@@ -177,7 +182,6 @@ public class Server {
                         /*Parse the command to instantiate a new message; save that message with the
                          * given account/recipient
                          */
-                        log.info(String.format(LOG_COMMAND_RECEIVED,actionCmd));
                         String sender = parsedCmd[5];
                         String recipient = parsedCmd[7];
                         String[] body = Arrays.copyOfRange(parsedCmd, 9, parsedCmd.length);
