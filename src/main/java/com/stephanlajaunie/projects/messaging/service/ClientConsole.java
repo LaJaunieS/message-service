@@ -49,7 +49,7 @@ public class ClientConsole implements Client {
         String response = null;
         
         try {
-            log.info(String.format(LOG_SEND_COMMAND,command.toString()));
+            log.debug(String.format(LOG_SEND_COMMAND,command.toString()));
             Socket client = new Socket(this.addr,this.PORT);
         
             ObjectInputStream is = new ObjectInputStream(client.getInputStream());
@@ -194,6 +194,11 @@ public class ClientConsole implements Client {
                                                    delNumber } );
                             response = this.connect(this.PORT, cmd);
                             //TODO handle response
+                            if (response.equals(Protocol.CONSTANTS.DELETED)) {
+                                System.out.println(LOG_CONFIRM_DELETE_ALL_RESP);
+                            } else {
+                                System.out.println(LOG_DELETE_UNSUCCESSFUL);
+                            }
                             confirming = false;
                             deleting = false;
                         } else if (delInput.equals("N")){
@@ -225,7 +230,13 @@ public class ClientConsole implements Client {
                                                        Protocol.CONSTANTS.DELETE.toString(), 
                                                        delNumber } );
                                 response = this.connect(this.PORT, cmd);
-                                //TODO handle response
+                                if (response.equals(Protocol.CONSTANTS.DELETED)) {
+                                    System.out.println(String.format(LOG_CONFIRM_DELETE_SINGLE_RESP,delNumber));
+                                } else if(response.equals(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS)) {
+                                    System.out.println(String.format(LOG_INDEX_OUT_OF_BOUNDS,delNumber));
+                                } else {
+                                    System.out.println(LOG_DELETE_UNSUCCESSFUL);
+                                }
                                 confirming = false;
                                 deleting = false;
                             } else if (delInput.equals("N")){
@@ -346,7 +357,7 @@ public class ClientConsole implements Client {
                         System.out.println(HELLO_CMD_STATUS);
                         response = client.connect(client.PORT, Protocol.CONSTANTS.HELLO.getInstance());
                         if (response != null) {
-                            System.out.println(response);
+                            System.out.println("Received response: " + response);
                         }
                         /*any connection error will be caught by the connect() method*/
                         break;

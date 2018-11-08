@@ -39,6 +39,10 @@ public class ClientConstants {
             + " This cannot be undone. Are you sure? (Y/N)";
     public static final String LOG_DELETE_INVALID_OPTION = "Valid input must be a number. Enter CANCEL to"
             + " exit this operation";
+    public static final String LOG_CONFIRM_DELETE_ALL_RESP = "All messages deleted succesfully";
+    public static final String LOG_CONFIRM_DELETE_SINGLE_RESP = "Message %s deleted successfully";
+    public static final String LOG_DELETE_UNSUCCESSFUL = "Server was unable to delete message(s)";
+    public static final String LOG_INDEX_OUT_OF_BOUNDS = "No message with index value %s";
     
     public static final String LOG_LOGIN_INVALID_ARG = "LOGIN command should be in the following"
             + "format: LOGIN <username> <password>";

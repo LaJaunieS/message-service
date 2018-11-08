@@ -31,9 +31,31 @@ import com.stephanlajaunie.projects.messaging.dao.FileDAO;
  *
  */
 public class Server {
-    private int port;
     
+    private int port;
     public static final Logger log = LoggerFactory.getLogger(Server.class);
+    
+    public static final String LOG_CONFIRM_LISTENING = "Server is listening at port %s...";
+    public static final String LOG_CONFIRM_SHUTDOWN = "Server connection shutting down...";
+    public static final String LOG_CONFIRM_ACCEPT = "Connection accepted, thread starting";
+    public static final String ERROR_STREAM_EXCEPTION = "There was a problem accessing the input/output stream(s)";
+    public static final String ERROR_CLASS_EXCEPTION = "Object type not recognized";
+    public static final String ERROR_CMD_NOT_RECOGNIZED = "Command not recognized. Command must conform to "
+            + "required protocol";
+    
+    public static final String LOG_COMMAND_WRITTEN = "Command sent: %s";
+    public static final String LOG_COMMAND_RECEIVED = "Command received: %s";
+    public static final String LOG_AUTH_VERIFYING = "Verifying credentials...";
+    
+    public static final String LOG_SEND_MESSAGES = "Sending messages for account %s";
+    public static final String ERROR_SEND_MESSAGES = "Unable to send messages. Account name %s may be invalid";
+    public static final String LOG_STORE_MSG_SUCCESS = "Storing message in account %s";
+    public static final String ERROR_LOCATING_USER = "Could not locate user %s";
+    
+    public static final String ERROR_INDEX_OUT_OF_BOUNDS = "No message with index value %s";
+    
+    public static final String ERROR_IO_EXCEPTION = "There was an exception receiving stream connection";
+    
     
     public Server(int port) {
         this.port = port;
@@ -47,12 +69,11 @@ public class Server {
         ExecutorService service = Executors.newCachedThreadPool();
         try ( ServerSocket serverSocket = new ServerSocket(port)){
             while (isActive) {
-                log.info("Server is listening at port {}...",this.port);
+                log.info(String.format(LOG_CONFIRM_LISTENING,this.port));
                 service.execute(new Session(serverSocket.accept()));
-                log.info("Server is listening at port {}...",this.port);
             }
         } catch (IOException e){
-            log.info("Server connection shutting down",e);
+            log.info(LOG_CONFIRM_SHUTDOWN,e);
             service.shutdown();
             
         }
@@ -76,7 +97,7 @@ public class Server {
             /*TODO figure out a way to keep connection open until client issues a terminate command
              * (in order to preserve state like authenticated)- while(connectionOpen) or something
              */
-            log.info("Connection accepted, thread starting");
+            log.info(LOG_CONFIRM_ACCEPT);
             /*Get the i/o streams, for starters*/
             try {
                 OutputStream os = client.getOutputStream();
@@ -91,10 +112,9 @@ public class Server {
                 Object obj = ois.readObject();
                 processObject(oos,obj);
             } catch (IOException e) {
-                log.info("There was a problem accessing the input/output stream(s)",e);
+                log.warn(ERROR_STREAM_EXCEPTION,e);
             } catch (ClassNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.warn(ERROR_CLASS_EXCEPTION,e);
             }
         
         }
@@ -107,9 +127,8 @@ public class Server {
             String response; 
             
             if (!(obj instanceof Protocol)) {
-                log.warn("Command not recognized");
-                throw new ClassNotFoundException("Command must conform to required protocol. "
-                        + "Command not recognized");
+                log.warn(ERROR_CMD_NOT_RECOGNIZED);
+                throw new ClassNotFoundException(ERROR_CMD_NOT_RECOGNIZED);
             } else if (obj instanceof Protocol.AUTH) {
                 Protocol.AUTH authCommand = (Protocol.AUTH) obj;
                 accountName = authCommand.getUsername().toString();
@@ -117,16 +136,14 @@ public class Server {
                 /*TODO response should eventually be made an instance of Protocol as well*/
                 response = (!this.authenticate(accountName, password))?
                         Protocol.CONSTANTS.AUTH_INVALID: Protocol.CONSTANTS.AUTH_VALID; 
-                log.info("AUTH command sent: {}",response);
+                log.info(String.format(LOG_COMMAND_WRITTEN,response));
                 oos.writeObject(response);
             } else if (obj instanceof Protocol.DISCONNECT) {
-                log.info("Disconnecting from client...");
-                response = "Disconnecting per client request";
-                oos.writeObject(response);
-                
+                log.info(String.format(LOG_COMMAND_RECEIVED,Protocol.DISCONNECT.getValue()));
+                oos.writeObject(Protocol.DISCONNECT.getValue());
             } else if (obj instanceof Protocol.HELLO) {
-                log.info("HELLO command received");
-                response = "HELLO command received. HELLO!";
+                log.info(String.format(LOG_COMMAND_RECEIVED,Protocol.HELLO.getValue()));
+                response = String.format(Protocol.HELLO.getValue());
                 oos.writeObject(response);
             } else if (obj instanceof Protocol.CMD_STRING) {
                 Protocol.CMD_STRING cmdString = (Protocol.CMD_STRING) obj;
@@ -135,21 +152,23 @@ public class Server {
                 accountName = parsedCmd[1];
                 password = parsedCmd[2];
                 
-                log.info("Command String {} received",actionCmd);
-                log.info("Verifying credentials...");
+                log.info(LOG_AUTH_VERIFYING);
                 if (!this.authenticate(accountName, password)) {
                     response = Protocol.CONSTANTS.AUTH_INVALID;
                 } else {
+                    log.info(String.format(LOG_COMMAND_RECEIVED,actionCmd));
                     actionCmd = parsedCmd[3];
                     switch(actionCmd) {
                     case "READ":
                         String messages = accountManager.getMessages(accountName).toString();
                         if (messages!=null) {
+                            log.info(String.format(LOG_SEND_MESSAGES,accountName));
                             oos.writeObject(messages);
                         } else {
                             /*If there's some internal issues retrieving account, don't want a 
                              * null pointer- but accountName should already have been validated by this point
                              */
+                            log.info(String.format(ERROR_SEND_MESSAGES, accountName));
                             oos.writeObject(Protocol.CONSTANTS.ERROR);
                         }
                         break;
@@ -158,24 +177,24 @@ public class Server {
                         /*Parse the command to instantiate a new message; save that message with the
                          * given account/recipient
                          */
+                        log.info(String.format(LOG_COMMAND_RECEIVED,actionCmd));
                         String sender = parsedCmd[5];
                         String recipient = parsedCmd[7];
                         String[] body = Arrays.copyOfRange(parsedCmd, 9, parsedCmd.length);
                         Message msg = new Message(sender,recipient,String.join(" ",body));
                         boolean saved = accountManager.storeMessage(recipient, msg);
                         
-                        //TODO make this a protocol-based response
                         if (saved) {
-                            log.info("Storing message in account {}",recipient);
+                            log.info(String.format(LOG_STORE_MSG_SUCCESS,recipient));
                             oos.writeObject(new String(Protocol.CONSTANTS.DELIVERED));
                         } else {
-                            log.info("Could not locate user {}",recipient);
+                            log.info(String.format(ERROR_LOCATING_USER,recipient));
                             oos.writeObject(new String(Protocol.CONSTANTS.UNDELIVERABLE));
                         }
                         break;
                     case "DELETE":
                         String messageNumber = parsedCmd[4];
-                        log.info("Delete command received for mesesage {}",messageNumber);
+                        log.info(String.format(LOG_COMMAND_RECEIVED,actionCmd) + " " + messageNumber);
                         
                          if (messageNumber.equals("ALL")) {
                              accountManager.clearMessages(accountName);
@@ -186,7 +205,7 @@ public class Server {
                                  accountManager.removeMessage(accountName, i);
                                  oos.writeObject(Protocol.CONSTANTS.DELETED);
                              } catch (IndexOutOfBoundsException e) {
-                                 log.warn("No message with index value {}",messageNumber);
+                                 log.warn(String.format(ERROR_INDEX_OUT_OF_BOUNDS, messageNumber));
                                  oos.writeObject(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
                              } catch (NumberFormatException e) {
                                  /*Client should have logic to prevent even reaching this point,
@@ -197,8 +216,8 @@ public class Server {
                          }
                         break;
                     default: 
-                        log.info("Command not recognized");
-                        oos.writeObject(new String("Command not recognized"));
+                        log.info(ERROR_CMD_NOT_RECOGNIZED);
+                        oos.writeObject(ERROR_CMD_NOT_RECOGNIZED);
                         break;
                     }
                 }
@@ -224,7 +243,7 @@ public class Server {
         try {
             server.accept();
         } catch (IOException e){
-            log.warn("There was an exception receiving stream connection");
+            log.warn(ERROR_IO_EXCEPTION);
         }
     }
 }

@@ -86,6 +86,10 @@ public class Protocol implements Serializable {
             DISCONNECT ds = new DISCONNECT();
             return ds;
         }
+        
+        public static String getValue() {
+            return "DISCONNECT";
+        }
     }
     
     /*Test command for confirming connection established*/
