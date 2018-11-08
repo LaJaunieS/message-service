@@ -56,8 +56,9 @@ public class AccountManager {
         return persisted;
     }
     
-    public Account authenticateAccount(String accountName, String password) {
+    public boolean authenticateAccount(String accountName, String password) {
         Account targetAccount = null;
+        boolean authenticated = false;
         try {
             MessageDigest mdInput = MessageDigest.getInstance(ALGORITHM);
             mdInput.update(password.getBytes());
@@ -68,17 +69,19 @@ public class AccountManager {
                 /*...If it does exist, verify the passwords match*/
                 this.setAuthenticated(MessageDigest.isEqual(inputHashed, 
                         targetAccount.getHashedPassword()));
+                authenticated = true;
             }
             if (!this.isAuthenticated()) {
                 log.info("Unable to authenticate account {}",accountName);
                 targetAccount = null;
+                authenticated = false;
             } else {
                 log.info("Account {} was authenticated",accountName);
             }
         } catch (NoSuchAlgorithmException e) {
             log.info("Unable to find hash algorithm {}",ALGORITHM,e);
         }
-        return targetAccount;
+        return authenticated;
     }
     
     public MessageStore getMessages(String accountName) throws SecurityException {
@@ -86,7 +89,7 @@ public class AccountManager {
         if (this.isAuthenticated()) {
             messages = this.getDAO().getAccount(accountName).getMessages();
         } else {
-            throw new SecurityException("Unable to delete messages from account" 
+            throw new SecurityException("Unable to get messages from account" 
                     + " without authentication");
         }
         return messages;
@@ -106,13 +109,46 @@ public class AccountManager {
         return stored;
     }
     
-    public void removeMessage(Account account, Message message) throws SecurityException {
+    public void removeMessage(String accountName, int index) throws SecurityException,
+                                                                    IndexOutOfBoundsException {
+        Account account = null;
+        MessageStore messageStore = null;
+        
         if (this.isAuthenticated()) {
-            account.getMessages().removeMessage(message); 
+            account = dao.getAccount(accountName);
+            messageStore = account.getMessages();
+            if (index > messageStore.getMessageList().size()) {
+                throw new IndexOutOfBoundsException("Index value " + index + " out of MessageStore bounds" );
+            } else {
+                messageStore.removeMessage(index);
+                dao.persistAccount(account);
+                log.info("Message {} successfully removed from Message Store",index);
+            }
         } else {
             throw new SecurityException("Unable to delete messages from account" 
                     + " without authentication");
         }
+    }
+    
+    public boolean clearMessages(String accountName) throws SecurityException {
+        Account acct = null;
+        boolean cleared = false;
+        MessageStore messageStore = null;
+        
+        if (this.isAuthenticated()) {
+            acct = dao.getAccount(accountName);
+            messageStore = acct.getMessages();
+            messageStore.clearMessages();
+            /*persist with new 0 message state*/
+            dao.persistAccount(acct);
+            if (messageStore.getMessageList().isEmpty()) {
+                cleared = true;
+                log.info("Message store successfully cleared");
+            } else {
+                log.info("Clear messages operation not successful");
+            }
+        }
+        return cleared;
     }
     
     public void setAccountDAO(DAO dao) {

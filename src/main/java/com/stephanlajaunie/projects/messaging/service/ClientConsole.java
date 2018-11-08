@@ -193,8 +193,7 @@ public class ClientConsole implements Client {
                                                    Protocol.CONSTANTS.DELETE.toString(), 
                                                    delNumber } );
                             response = this.connect(this.PORT, cmd);
-/*delete when completed*/   System.out.println("Received response: " + response);
-                            
+                            //TODO handle response
                             confirming = false;
                             deleting = false;
                         } else if (delInput.equals("N")){
@@ -226,7 +225,7 @@ public class ClientConsole implements Client {
                                                        Protocol.CONSTANTS.DELETE.toString(), 
                                                        delNumber } );
                                 response = this.connect(this.PORT, cmd);
-    /*delete when completed*/   System.out.println("Received response: " + response);
+                                //TODO handle response
                                 confirming = false;
                                 deleting = false;
                             } else if (delInput.equals("N")){

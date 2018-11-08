@@ -60,6 +60,12 @@ public class Protocol implements Serializable {
         /*an undeliverable error (e.g., user specified recipient that doesn't exist)*/
         public static final String UNDELIVERABLE = "UNDELIVERABLE";
         
+        /*an index-out-of-bonds error (e.g., user specified a message # not in the message store)*/
+        public static final String INDEX_OUT_OF_BOUNDS = "INDEX_OUT_OF_BOUNDS";
+                
+        /*invalid value error (e.g., client sent a string when server expecting a number)*/
+        public static final String NOT_VALID_VALUE = "NOT_VALID_VALUE";
+        
         private CONSTANTS() {
             super("CONSTANTS");
         }

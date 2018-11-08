@@ -32,9 +32,9 @@ public class FileDAO extends AccountDAOs implements DAO {
                 ObjectInputStream ois = new ObjectInputStream(fis)){
             account = (Account) ois.readObject();
         } catch (IOException e) {
-            log.warn("There was a problem accessing the input stream");
+            log.warn("There was a problem accessing the input stream",e);
         } catch (ClassNotFoundException e) {
-            log.warn("Unable to instantiate Account object from file stream");
+            log.warn("Unable to instantiate Account object from file stream",e);
         }
         return account;
     }

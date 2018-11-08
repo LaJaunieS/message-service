@@ -40,15 +40,21 @@ public class TestApp {
         acctMgr.createAcccount("slajaunie", "password2");
         
         /*Using the account manager to authenticate user credentials (modeling a log in event)*/
-        Account slajaunie = acctMgr.authenticateAccount("slajaunie", "password1");
-        Account alincoln = acctMgr.authenticateAccount("aLincoln", "fourscore");
+        if (acctMgr.authenticateAccount("slajaunie", "password1")) {
+            //Account slajaunie = acctMgr.getAccount("slajaunie");
+            acctMgr.storeMessage("slajaunie", message);
+            acctMgr.storeMessage("slajaunie", message2);
 
+        }
+        if (acctMgr.authenticateAccount("aLincoln", "fourscore")) {
+            //Account alincoln = acctMgr.getAccount("aLincoln");
+
+        }
+        
         /*Using the account manager to deliver messages to a users message store (modeling a received
          * send event from a client)
          */
-        acctMgr.storeMessage("slajaunie", message);
-        acctMgr.storeMessage("slajaunie", message2);
-
+        
         /*Confirming the messages were saved to the account's message store*/
         MessageStore messages = acctMgr.getMessages("slajaunie");
         System.out.print(messages.toString());

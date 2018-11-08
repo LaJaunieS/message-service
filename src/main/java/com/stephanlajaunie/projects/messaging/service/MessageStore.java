@@ -23,6 +23,18 @@ public class MessageStore implements Serializable {
         return messages.remove(message);
     }
     
+    public synchronized Message removeMessage(final int index) throws IndexOutOfBoundsException {
+        if (index > messages.size()) {
+            throw new IndexOutOfBoundsException("Index value exceeds length of the MessageStore list");
+        } else {
+            return this.messages.remove(index);
+        }
+    }
+    
+    public synchronized void clearMessages() {
+        messages.clear();
+    }
+    
     
     /*TODO think of other ways to get a message*/
     public Message getMessage(int index) {

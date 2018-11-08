@@ -58,14 +58,6 @@ public class Server {
         }
     }
     
-    public void forward() {
-        
-    }
-    
-    public void deliver() {}
-    
-    public void store() {}
-    
     private class Session implements Runnable, Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -109,8 +101,9 @@ public class Server {
         
         private void processObject(ObjectOutputStream oos, Object obj) throws ClassNotFoundException, IOException {
             Protocol command = null;
-            String actionCmd = null;
             String accountName = null;
+            String password = null;
+            
             String response; 
             
             if (!(obj instanceof Protocol)) {
@@ -118,12 +111,11 @@ public class Server {
                 throw new ClassNotFoundException("Command must conform to required protocol. "
                         + "Command not recognized");
             } else if (obj instanceof Protocol.AUTH) {
-                log.info("Verifying credentials");
                 Protocol.AUTH authCommand = (Protocol.AUTH) obj;
-                accountName = authCommand.getUsername();
-                String password = authCommand.getPassword().toString();
+                accountName = authCommand.getUsername().toString();
+                password = authCommand.getPassword().toString();
                 /*TODO response should eventually be made an instance of Protocol as well*/
-                response = (accountManager.authenticateAccount(accountName, password) == null)?
+                response = (!this.authenticate(accountName, password))?
                         Protocol.CONSTANTS.AUTH_INVALID: Protocol.CONSTANTS.AUTH_VALID; 
                 log.info("AUTH command sent: {}",response);
                 oos.writeObject(response);
@@ -139,13 +131,19 @@ public class Server {
             } else if (obj instanceof Protocol.CMD_STRING) {
                 Protocol.CMD_STRING cmdString = (Protocol.CMD_STRING) obj;
                 String[] parsedCmd = cmdString.toString().split(" ");
-                actionCmd = parsedCmd[3];
+                String actionCmd = parsedCmd[3];
                 accountName = parsedCmd[1];
-                log.info("Command String {} received",actionCmd);
+                password = parsedCmd[2];
                 
-                switch(actionCmd) {
+                log.info("Command String {} received",actionCmd);
+                log.info("Verifying credentials...");
+                if (!this.authenticate(accountName, password)) {
+                    response = Protocol.CONSTANTS.AUTH_INVALID;
+                } else {
+                    actionCmd = parsedCmd[3];
+                    switch(actionCmd) {
                     case "READ":
-                        String messages = accountManager.getAccount(accountName).getMessages().toString();
+                        String messages = accountManager.getMessages(accountName).toString();
                         if (messages!=null) {
                             oos.writeObject(messages);
                         } else {
@@ -178,14 +176,32 @@ public class Server {
                     case "DELETE":
                         String messageNumber = parsedCmd[4];
                         log.info("Delete command received for mesesage {}",messageNumber);
-                        oos.writeObject(new String(Protocol.CONSTANTS.DELETED));
-                        //accountManager.removeMessage(account, message);
+                        
+                         if (messageNumber.equals("ALL")) {
+                             accountManager.clearMessages(accountName);
+                             oos.writeObject(Protocol.CONSTANTS.DELETED);
+                         } else {
+                             try {
+                                 int i = Integer.parseInt(messageNumber);
+                                 accountManager.removeMessage(accountName, i);
+                                 oos.writeObject(Protocol.CONSTANTS.DELETED);
+                             } catch (IndexOutOfBoundsException e) {
+                                 log.warn("No message with index value {}",messageNumber);
+                                 oos.writeObject(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
+                             } catch (NumberFormatException e) {
+                                 /*Client should have logic to prevent even reaching this point,
+                                  * but just in case...
+                                  */
+                                 oos.writeObject(Protocol.CONSTANTS.NOT_VALID_VALUE);
+                             }
+                         }
                         break;
                     default: 
                         log.info("Command not recognized");
                         oos.writeObject(new String("Command not recognized"));
                         break;
                     }
+                }
             }
                 
         }    
@@ -194,7 +210,9 @@ public class Server {
                  * TODO starting with switch statement, may switch to command
                  * patter later*/
                 
-    
+        private boolean authenticate(String username, String password) {
+            return this.accountManager.authenticateAccount(username, password);
+        }
     }
         
     
