@@ -195,6 +195,8 @@ public class ClientConsole implements Client {
                             System.out.println(LOG_UNDELIVERABLE_MSG_ERROR);
                         } else if (response.equals(Protocol.CONSTANTS.DELIVERED)){
                             System.out.println(LOG_MSG_SUCCESS);
+                        } else if (response.equals(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS)) {
+                            System.out.println(String.format(LOG_INDEX_OUT_OF_BOUNDS,messageNumber));
                         } else {
                             System.out.println(LOG_UNRECOGNIZED_SENT_RESP_ERROR);
                         }

@@ -134,7 +134,13 @@ public class Server {
             } else if (obj instanceof Protocol.CMD_STRING) {
                 Protocol.CMD_STRING cmdString = (Protocol.CMD_STRING) obj;
                 String[] parsedCmd = cmdString.toString().split(" ");
+                
                 String actionCmd = null;
+                Message msg = null;
+                boolean saved = false;
+                String messageNumber = null;
+                String recipient = null;
+                
                 accountName = parsedCmd[1];
                 password = parsedCmd[2];
                 
@@ -168,10 +174,11 @@ public class Server {
                          * AUTH <username> <password> SEND <sender> RECIP <recipient> MSG <msg>
                          */
                         String sender = parsedCmd[5];
-                        String recipient = parsedCmd[7];
+                        recipient = parsedCmd[7];
                         String[] body = Arrays.copyOfRange(parsedCmd, 9, parsedCmd.length);
-                        Message msg = new Message(sender,recipient,String.join(" ",body));
-                        boolean saved = accountManager.storeMessage(recipient, msg);
+                        msg = new Message(sender,recipient,String.join(" ",body));
+                        
+                        saved = accountManager.storeMessage(recipient, msg);
                         
                         if (saved) {
                             log.info(String.format(LOG_STORE_MSG_SUCCESS,recipient));
@@ -181,8 +188,39 @@ public class Server {
                             oos.writeObject(new String(Protocol.CONSTANTS.UNDELIVERABLE));
                         }
                         break;
+                    case "FORWARD":
+                        /*Command string must be in format:
+                         * AUTH <username> <password> FORWARD RECIP <recipient> <index>*/
+                        messageNumber = parsedCmd[6];
+                        recipient = parsedCmd[5];
+                        try {
+                            int i = Integer.parseInt(messageNumber);
+                            msg = accountManager.getMessages(accountName).getMessage(i);
+                            
+                            /*append forwarded note to existing message data before storing*/
+                            String txt = "FW: " + msg.getData();
+                            msg.setData(txt);
+                            
+                            saved = accountManager.storeMessage(recipient, msg);
+                            if (saved) {
+                                log.info(String.format(LOG_STORE_MSG_SUCCESS,recipient));
+                                oos.writeObject(new String(Protocol.CONSTANTS.DELIVERED));
+                            } else {
+                                log.info(String.format(ERROR_LOCATING_USER,recipient));
+                                oos.writeObject(new String(Protocol.CONSTANTS.UNDELIVERABLE));
+                            }
+                        } catch (NumberFormatException e) {
+                            /*Client should have logic to prevent even reaching this point,
+                             * but just in case...
+                             */
+                            oos.writeObject(Protocol.CONSTANTS.NOT_VALID_VALUE);
+                        } catch (IndexOutOfBoundsException e) {
+                            log.warn(String.format(ERROR_INDEX_OUT_OF_BOUNDS, messageNumber));
+                            oos.writeObject(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
+                        }
+                        break;
                     case "DELETE":
-                        String messageNumber = parsedCmd[4];
+                        messageNumber = parsedCmd[4];
                         log.info(String.format(LOG_COMMAND_RECEIVED,actionCmd) + " " + messageNumber);
                         
                          if (messageNumber.equals("ALL")) {
