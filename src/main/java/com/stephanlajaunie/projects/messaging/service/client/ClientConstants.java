@@ -19,7 +19,7 @@ public class ClientConstants {
     public static final String LOG_READ_ERROR = "Unable to retrieve messages. Please try again";
     
     public static final String LOG_SEND_ACTION = "Send a message";
-    public static final String LOG_SEND_RECIP_OPTION = "Recipient: %s";
+    public static final String LOG_RECIP_OPTION = "Enter a Recipient: ";
     public static final String LOG_SEND_MSG_OPTION = "Enter a single-line message. " + LS 
             + "Hit the ENTER key to finish composing message: ";
     public static final String LOG_UNDELIVERABLE_MSG_ERROR = "Message could not be delivered. " + 
@@ -37,7 +37,7 @@ public class ClientConstants {
     public static final String LOG_DELETE_CONFIRM_ERROR = "You must confirm delete command before proceeding.";
     public static  final String LOG_DELETE_CONFIRM_SINGLE = "Deleting message number %s."
             + " This cannot be undone. Are you sure? (Y/N)";
-    public static final String LOG_DELETE_INVALID_OPTION = "Valid input must be a number. Enter CANCEL to"
+    public static final String LOG_INVALID_OPTION = "Valid input must be a number. Enter CANCEL to"
             + " exit this operation";
     public static final String LOG_CONFIRM_DELETE_ALL_RESP = "All messages deleted succesfully";
     public static final String LOG_CONFIRM_DELETE_SINGLE_RESP = "Message %s deleted successfully";

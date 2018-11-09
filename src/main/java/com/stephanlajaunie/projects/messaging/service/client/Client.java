@@ -25,6 +25,8 @@ public interface Client {
     
     public String sendAction(String command, String response) throws IOException;
     
+    public String forwardAction(String command, String response) throws IOException;
+    
     public String deleteAction(String command, String response) throws IOException;
     
     public String loginAction(String command, String response) throws IOException; 

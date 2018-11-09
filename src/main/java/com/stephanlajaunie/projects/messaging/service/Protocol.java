@@ -34,6 +34,8 @@ public class Protocol implements Serializable {
         
         public static final String DELETE = "DELETE";
         
+        public static final String FORWARD = "FORWARD";
+        
         public static final String DELETED = "DELETED";
         
         /*Sent by server in response to authorization request from the client*/

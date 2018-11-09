@@ -138,6 +138,7 @@ public class Server {
                 accountName = parsedCmd[1];
                 password = parsedCmd[2];
                 
+                
                 log.info(LOG_AUTH_VERIFYING);
                 if (!this.authenticate(accountName, password)) {
                     response = Protocol.CONSTANTS.AUTH_INVALID;
