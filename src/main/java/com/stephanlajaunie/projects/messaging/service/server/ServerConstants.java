@@ -8,7 +8,7 @@ public class ServerConstants {
     public static final String LOG_CONFIRM_LISTENING = "Server is listening at port %s...";
     public static final String LOG_CONFIRM_SHUTDOWN = "Server connection shutting down...";
     public static final String LOG_CONFIRM_ACCEPT = "Connection accepted, thread starting";
-    public static final String LOG_CONFIRM_DISCONNECT = "Confirmed disconnect with client";
+    public static final String LOG_CONFIRM_DISCONNECT = "Client has ended further connections with the server";
     public static final String LOG_CONFIRM_HELLO = "Sent HELLO command to client";
     public static final String ERROR_STREAM_EXCEPTION = "There was a problem accessing the input/output stream(s)";
     public static final String ERROR_CLASS_EXCEPTION = "Object type not recognized";

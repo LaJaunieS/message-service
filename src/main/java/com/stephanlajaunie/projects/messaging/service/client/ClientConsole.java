@@ -62,14 +62,10 @@ public class ClientConsole implements Client {
             /*Capture the response from the input stream*/
             response = (String) is.readObject();
             
+            is.close();
+            os.close();
+            log.debug("Closed streams...");
             
-            /*This command case will access the i/o streams (to close them)
-             * Response will be null*/
-            if (command.toString().equals("DISCONNECT")) {
-                is.close();
-                os.close();
-                log.debug("Closed streams...");
-            }
         } catch (ConnectException e) {
             System.out.println("The server already terminated the connection, or no connection was established.");
         } catch (IOException e) {
@@ -85,7 +81,9 @@ public class ClientConsole implements Client {
      */
     public void disconnect() {
         System.out.println("Ending connection with the server...");
-        /*Don't need to contact the server but still need to close the streams*/
+        /*Don't really need to contact server for this, but adds to server log messages that client
+         * has closed, in case it could be helpful later
+         */
         this.connect(this.PORT, Protocol.DISCONNECT.getInstance());
         System.out.println("Exiting....");
         logoutCredentials();
