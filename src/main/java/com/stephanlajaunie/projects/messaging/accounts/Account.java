@@ -2,7 +2,7 @@ package com.stephanlajaunie.projects.messaging.accounts;
 
 import java.io.Serializable;
 
-import com.stephanlajaunie.projects.messaging.service.MessageStore;
+import com.stephanlajaunie.projects.messaging.message.MessageStore;;;
 
 public class Account implements Serializable {
     /*The messenger address(me@example.com) associated with this account*/

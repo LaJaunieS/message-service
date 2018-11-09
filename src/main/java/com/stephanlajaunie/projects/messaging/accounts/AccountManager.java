@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.stephanlajaunie.projects.messaging.dao.DAO;
-import com.stephanlajaunie.projects.messaging.service.Message;
-import com.stephanlajaunie.projects.messaging.service.MessageStore;
+import com.stephanlajaunie.projects.messaging.message.Message;
+import com.stephanlajaunie.projects.messaging.message.MessageStore;
 
 /**Entry point for interaction with an account. Authenticates account credentials-
  * from there a user or app can retrieve messages saved in the MessageStore

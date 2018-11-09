@@ -1,6 +1,8 @@
-package com.stephanlajaunie.projects.messaging.service;
+package com.stephanlajaunie.projects.messaging.service.client;
 
 import java.io.IOException;
+
+import com.stephanlajaunie.projects.messaging.service.Protocol;
 
 /**Encapsulates a client which connects to a Server to initiate requests
 * for an authenticated account's stored messages, and to send messages to 

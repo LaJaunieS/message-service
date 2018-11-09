@@ -1,8 +1,8 @@
-package com.stephanlajaunie.projects.messaging.service;
+package com.stephanlajaunie.projects.messaging.service.client;
 
 import java.util.Collections;
 
-/**Intended to encapsulate many of the common client-side logs, messages, prompts, etc that may be used.
+/**Encapsulates many of the common client-side logs, messages, prompts, etc that may be used.
  * @author slajaunie
  *
  */

@@ -1,4 +1,4 @@
-package com.stephanlajaunie.projects.messaging.service;
+package com.stephanlajaunie.projects.messaging.message;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;

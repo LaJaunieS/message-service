@@ -1,7 +1,8 @@
-package com.stephanlajaunie.projects.messaging.service;
+package com.stephanlajaunie.projects.messaging.service.server;
+
+import static com.stephanlajaunie.projects.messaging.service.server.ServerConstants.*;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -18,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import com.stephanlajaunie.projects.messaging.accounts.AccountManager;
 import com.stephanlajaunie.projects.messaging.dao.DAO;
 import com.stephanlajaunie.projects.messaging.dao.FileDAO;
+import com.stephanlajaunie.projects.messaging.message.Message;
+import com.stephanlajaunie.projects.messaging.service.Protocol;
 
 /**Encapsulates a server that listens for client connections containing messages. Once
  * a message is received from a client via accept(), insntantiates a new AccountManager
@@ -35,35 +38,12 @@ public class Server {
     private int port;
     public static final Logger log = LoggerFactory.getLogger(Server.class);
     
-    public static final String LOG_CONFIRM_LISTENING = "Server is listening at port %s...";
-    public static final String LOG_CONFIRM_SHUTDOWN = "Server connection shutting down...";
-    public static final String LOG_CONFIRM_ACCEPT = "Connection accepted, thread starting";
-    public static final String LOG_CONFIRM_DISCONNECT = "Confirmed disconnect with client";
-    public static final String LOG_CONFIRM_HELLO = "Sent HELLO command to client";
-    public static final String ERROR_STREAM_EXCEPTION = "There was a problem accessing the input/output stream(s)";
-    public static final String ERROR_CLASS_EXCEPTION = "Object type not recognized";
-    public static final String ERROR_CMD_NOT_RECOGNIZED = "Command not recognized. Command must conform to "
-            + "required protocol";
-    
-    public static final String LOG_COMMAND_WRITTEN = "Command sent: %s";
-    public static final String LOG_COMMAND_RECEIVED = "Command received: %s";
-    public static final String LOG_AUTH_VERIFYING = "Verifying credentials...";
-    
-    public static final String LOG_SEND_MESSAGES = "Sending messages for account %s";
-    public static final String ERROR_SEND_MESSAGES = "Unable to send messages. Account name %s may be invalid";
-    public static final String LOG_STORE_MSG_SUCCESS = "Storing message in account %s";
-    public static final String ERROR_LOCATING_USER = "Could not locate user %s";
-    
-    public static final String ERROR_INDEX_OUT_OF_BOUNDS = "No message with index value %s";
-    
-    public static final String ERROR_IO_EXCEPTION = "There was an exception receiving stream connection";
-    
-    
     public Server(int port) {
         this.port = port;
     }
     
-    /**Open the server connection and listen for a client to connect
+    /**Opens the server connection and listen for a client to connect.
+     * When a connection is accepted, opens a new instance of Session in a new Thread
      * 
      */
     public void accept() throws IOException {
@@ -82,6 +62,9 @@ public class Server {
         }
     }
     
+    /**Encapsulates a Client-Server connection session. Once opened in a new Thread, reads data
+     * from the Socket input stream and then processes the data, which will involve writing
+     * data to the Socket output stream*/
     private class Session implements Runnable, Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -108,8 +91,7 @@ public class Server {
                 
                 ObjectInputStream ois = new ObjectInputStream(client.getInputStream());
                 
-               /*Read the command from the client*/
-                /*Determine if command is proper type (enum protocol)
+               /*Read the command from the client
                  * TODO Need to determine a safer way to do this
                  */
                 Object obj = ois.readObject();
@@ -128,6 +110,7 @@ public class Server {
             
             String response; 
             
+            /*Determine if command is proper type (Protocol constant)*/
             if (!(obj instanceof Protocol)) {
                 log.warn(ERROR_CMD_NOT_RECOGNIZED);
                 throw new ClassNotFoundException(ERROR_CMD_NOT_RECOGNIZED);
@@ -135,7 +118,6 @@ public class Server {
                 Protocol.AUTH authCommand = (Protocol.AUTH) obj;
                 accountName = authCommand.getUsername().toString();
                 password = authCommand.getPassword().toString();
-                /*TODO response should eventually be made an instance of Protocol as well*/
                 response = (!this.authenticate(accountName, password))?
                         Protocol.CONSTANTS.AUTH_INVALID: Protocol.CONSTANTS.AUTH_VALID; 
                 log.info(String.format(LOG_COMMAND_WRITTEN,response));
@@ -178,9 +160,11 @@ public class Server {
                         }
                         break;
                     case "SEND":
-                        //TODO clean up some of this parsing
                         /*Parse the command to instantiate a new message; save that message with the
                          * given account/recipient
+                         */
+                        /*Command string must be in format 
+                         * AUTH <username> <password> SEND <sender> RECIP <recipient> MSG <msg>
                          */
                         String sender = parsedCmd[5];
                         String recipient = parsedCmd[7];

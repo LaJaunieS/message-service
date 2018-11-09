@@ -9,8 +9,8 @@ import com.stephanlajaunie.projects.messaging.accounts.Account;
 import com.stephanlajaunie.projects.messaging.accounts.AccountManager;
 import com.stephanlajaunie.projects.messaging.dao.DAO;
 import com.stephanlajaunie.projects.messaging.dao.FileDAO;
-import com.stephanlajaunie.projects.messaging.service.Message;
-import com.stephanlajaunie.projects.messaging.service.MessageStore;
+import com.stephanlajaunie.projects.messaging.message.Message;
+import com.stephanlajaunie.projects.messaging.message.MessageStore;
 
 /**Will test and verify functionality of certain classes contained in this library
  * Generates accounts and credentials for other apps

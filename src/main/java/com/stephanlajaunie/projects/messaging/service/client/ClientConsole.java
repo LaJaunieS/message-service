@@ -1,22 +1,24 @@
-package com.stephanlajaunie.projects.messaging.service;
+package com.stephanlajaunie.projects.messaging.service.client;
+
+import static com.stephanlajaunie.projects.messaging.service.client.ClientConstants.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.stephanlajaunie.projects.messaging.service.ClientConstants.*;
+import com.stephanlajaunie.projects.messaging.service.Protocol;
+import com.stephanlajaunie.projects.messaging.service.Protocol.AUTH;
+import com.stephanlajaunie.projects.messaging.service.Protocol.CMD_STRING;
+import com.stephanlajaunie.projects.messaging.service.Protocol.CONSTANTS;
+import com.stephanlajaunie.projects.messaging.service.Protocol.DISCONNECT;
+import com.stephanlajaunie.projects.messaging.service.Protocol.HELLO;
 
 /**Implements a Client, where the User interacts via the Console.
  * Connects to the server via Port 4885
@@ -86,8 +88,7 @@ public class ClientConsole implements Client {
         /*Don't need to contact the server but still need to close the streams*/
         this.connect(this.PORT, Protocol.DISCONNECT.getInstance());
         System.out.println("Exiting....");
-        this.username = null;
-        this.password = null;
+        logoutCredentials();
     }
     
     public void readAction(final String command, String response) throws IOException {
@@ -271,11 +272,17 @@ public class ClientConsole implements Client {
                             Protocol.AUTH.getInstance(  commandComponents[1],
                                                         commandComponents[2]));
             if (response != null) {
-                if (response.equals("AUTH_VALID")) {
+                if (response.equals(Protocol.CONSTANTS.AUTH_VALID)) {
                     setCredentials(commandComponents[1],commandComponents[2]);
                     System.out.println(LOG_LOGIN_AUTH_SUCCESS);
                 } else {
                     System.out.println(LOG_LOGIN_AUTH_FAIL);
+                    /*Handles situation where user successfully logged in under one username
+                     * and then unsuccessfully attempted to log in under another username- 
+                     * need to null out username and password properties otherwise logged in 
+                     * state will remain with first login
+                     */
+                    logoutCredentials();
                 }
             } else {
                 System.out.println(LOG_NO_SERVER_RESPONSE);
@@ -288,6 +295,12 @@ public class ClientConsole implements Client {
     private void setCredentials(final String username, final String password) {
         this.username = username;
         this.password = password;
+    }
+    
+    private void logoutCredentials() {
+        this.username = null;
+        this.password = null;
+        
     }
     
     private void setInput(BufferedReader input) {
