@@ -19,7 +19,6 @@ import com.stephanlajaunie.projects.messaging.service.Protocol;
 
 /**Implements a Client, where the User interacts via the Console.
  * Connects to the server via Port 4885
- * @inheritDoc 
  * @author slajaunie
  *
  */
@@ -37,9 +36,8 @@ public class ClientConsole implements Client {
     
     private ClientConsole() {}
     
-    /**
-    /* {@inheritDoc}
-     * Manages the connection with the server. Issues a command consistent with the 
+    /**{@inheritDoc}
+     * Issues a command consistent with the  
      * given protocol and returns the response from the server, in the form of a String.
      * If the command is simply to disconnect from the server, return value will be null
      * @see com.stephanlajaunie.projects.messaging.service.client.Client#connect(int, com.stephanlajaunie.projects.messaging.service.Protocol)
@@ -94,7 +92,7 @@ public class ClientConsole implements Client {
     /** {@inheritDoc}
      * Verifies whether username/password properties are assigned prior to transmitting the commandt to
      * the server. Response from the server will be assumed to be a list of messages from the User's
-     * message store, and prints out that response
+     * message store, and prints out that response.
      * @see com.stephanlajaunie.projects.messaging.service.client.Client#readAction(java.lang.String, java.lang.String)
      */
     public String readAction(final String command, String response) throws IOException {
@@ -183,15 +181,14 @@ public class ClientConsole implements Client {
         String messageNumber = null;
         String fwdCommand = null;
         if (!(this.username == null && this.password == null)) {
-            System.out.println("Forward a message");
+            System.out.println(LOG_FORWARD_ACTION);
             System.out.println(LOG_RECIP_OPTION);
             fwdCommand = input.readLine();
             recipient = fwdCommand;
             
             /*operation loop. Prompt user for recipient and then message number to be sent*/
             while(forwarding) {
-                System.out.println("Enter the message number of the message you wish to send. Enter CANCEL to exit"
-                        + " this operation and enter READ command to see a list of available messages");
+                System.out.println(LOG_FORWARD_MSG_OPTION);
                 fwdCommand = input.readLine();
                 if (fwdCommand.equals("CANCEL")){
                     /*exit the loop*/
@@ -349,6 +346,10 @@ public class ClientConsole implements Client {
         return response;
     }
     
+    /**{@inheritDoc}
+     * @see com.stephanlajaunie.projects.messaging.service.client.Client#loginAction(java.lang.String, java.lang.String)
+     */
+    @Override
     public String loginAction(final String command, String response) throws IOException {
         String[] commandComponents = command.split(" ");
         if (commandComponents.length != 3) {
@@ -380,17 +381,27 @@ public class ClientConsole implements Client {
         return response;
     }
     
+    /**Set the username and password fields associated with this Client
+     * @param username
+     * @param password
+     */
     private void setCredentials(final String username, final String password) {
         this.username = username;
         this.password = password;
     }
     
+    /**
+     *Null out the username and password fields associated with this Client 
+     */
     private void logoutCredentials() {
         this.username = null;
         this.password = null;
         
     }
     
+    /**Sets the BufferedReader for this Client
+     * @param input
+     */
     private void setInput(BufferedReader input) {
         this.input = input;
     }

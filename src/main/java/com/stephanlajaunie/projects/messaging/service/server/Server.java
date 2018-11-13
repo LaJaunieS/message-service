@@ -23,12 +23,12 @@ import com.stephanlajaunie.projects.messaging.message.Message;
 import com.stephanlajaunie.projects.messaging.service.Protocol;
 
 /**Encapsulates a server that listens for client connections containing messages. Once
- * a message is received from a client via accept(), insntantiates a new AccountManager
+ * a message is received from a client via accept(), instantiates a new AccountManager
  * for operating on an account, and opens a new thread for those operations (with the subclass
  * Session);
  * runnable process will forward the message to the appropriate store(s) 
  * based on the recipients contained in the message
- * Input stream will contain the message to be delievered
+ * Input stream will contain the message to be delivered
  * Output stream will contain the response to the client
  * @author slajaunie
  *

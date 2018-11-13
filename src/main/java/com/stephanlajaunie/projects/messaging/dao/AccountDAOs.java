@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-/**Encapsulates several methods utilized by specific edu.uw.ext.framework.account.AccountDao 
+/**Encapsulates several methods utilized by specific com.stephanlajaunie.projects.messaging.dao.DAO
  * implementations and required by the AccountDao
  * interface, specifically for operations handling deleting a file or entire directory. 
  * Getters and Setters for persisted Accounts are handled by specific implementations
@@ -23,9 +23,6 @@ public class AccountDAOs {
     /**Removes the given account from the data source
      * @param accountName a String representing the name of the Account to be
      * deleted
-     * @see edu.uw.ext.framework.dao.AccountDao#deleteAccount(java.lang.String)
-     * @throws AccountException if an Account with the given name does not exist, 
-     * or if the operation otherwise fails
      */
     public void deleteAccount(final String accountName)  {
         /*Find the account by the given accountName...*/
@@ -59,8 +56,6 @@ public class AccountDAOs {
 
 
     /**Removes all accounts in the target/accounts directory.
-     * @see edu.uw.ext.framework.dao.AccountDao#reset()
-     * @throws AccountException if the operation fails
      */
     public void clearDirectory() {
         /*loop through parent directory and call this.deleteAccount() for each File/directory
