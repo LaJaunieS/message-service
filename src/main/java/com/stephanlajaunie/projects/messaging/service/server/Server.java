@@ -101,7 +101,6 @@ public class Server {
             } catch (ClassNotFoundException e) {
                 log.warn(ERROR_CLASS_EXCEPTION,e);
             }
-        
         }
         
         private void processObject(ObjectOutputStream oos, Object obj) throws ClassNotFoundException, IOException {

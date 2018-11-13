@@ -10,15 +10,12 @@ import java.io.ObjectOutputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.stephanlajaunie.projects.messaging.service.Protocol;
-import com.stephanlajaunie.projects.messaging.service.Protocol.AUTH;
-import com.stephanlajaunie.projects.messaging.service.Protocol.CMD_STRING;
-import com.stephanlajaunie.projects.messaging.service.Protocol.CONSTANTS;
-import com.stephanlajaunie.projects.messaging.service.Protocol.DISCONNECT;
-import com.stephanlajaunie.projects.messaging.service.Protocol.HELLO;
 
 /**Implements a Client, where the User interacts via the Console.
  * Connects to the server via Port 4885
@@ -38,22 +35,25 @@ public class ClientConsole implements Client {
      * would prefer to initialize when a client is instantiated*/
     private BufferedReader input = null;
     
-    private ClientConsole() {    }
+    private ClientConsole() {}
     
-    /**Manages the connection with the server. Issues a command consistent with the 
+    /**
+    /* {@inheritDoc}
+     * Manages the connection with the server. Issues a command consistent with the 
      * given protocol and returns the response from the server, in the form of a String.
      * If the command is simply to disconnect from the server, return value will be null
-     * @param port this port where the connection is made
-     * @param command the command to be sent to the server, as an instance of Protocol
-     * @return a String representing the response from the server
+     * @see com.stephanlajaunie.projects.messaging.service.client.Client#connect(int, com.stephanlajaunie.projects.messaging.service.Protocol)
      */
+    @Override
     public String connect(final int port, final Protocol command) {
         String response = null;
         
         try {
             log.debug(String.format(LOG_SEND_COMMAND,command.toString()));
+            /*open the socket*/
             Socket client = new Socket(this.addr,this.PORT);
         
+            /*capture the i/o streams*/
             ObjectInputStream is = new ObjectInputStream(client.getInputStream());
             ObjectOutputStream os = new ObjectOutputStream(client.getOutputStream());
             
@@ -62,11 +62,12 @@ public class ClientConsole implements Client {
             /*Capture the response from the input stream*/
             response = (String) is.readObject();
             
+            /*close the streams*/
             is.close();
             os.close();
             log.debug("Closed streams...");
             
-        } catch (ConnectException e) {
+        }catch (SocketException e) {
             System.out.println("The server already terminated the connection, or no connection was established.");
         } catch (IOException e) {
             log.info("There was a problem connecting to the Server socket",e);
@@ -76,53 +77,63 @@ public class ClientConsole implements Client {
         return response;
     }
     
-    /**Ends connection with server (connect() closes the streams) and nulls out username/password information
-     * @return
+    /**Notifies the server that this Client is ending all future connections with the server
+     * (for logging/debugging purposes) and nulls out username/password information
+     * {@inheritDoc}
+     * @see com.stephanlajaunie.projects.messaging.service.client.Client#disconnect()
      */
+    @Override
     public void disconnect() {
         System.out.println("Ending connection with the server...");
-        /*Don't really need to contact server for this, but adds to server log messages that client
-         * has closed, in case it could be helpful later
-         */
+        
         this.connect(this.PORT, Protocol.DISCONNECT.getInstance());
         System.out.println("Exiting....");
         logoutCredentials();
     }
     
-    public void readAction(final String command, String response) throws IOException {
+    /** {@inheritDoc}
+     * Verifies whether username/password properties are assigned prior to transmitting the commandt to
+     * the server. Response from the server will be assumed to be a list of messages from the User's
+     * message store, and prints out that response
+     * @see com.stephanlajaunie.projects.messaging.service.client.Client#readAction(java.lang.String, java.lang.String)
+     */
+    public String readAction(final String command, String response) throws IOException {
         /*User will enter READ- Client will construct a command string in the format
          * AUTH <username> <password> READ
          */
+        /*If authenticated, build and send the command string*/
         if (this.username != null && this.password != null) {
             Protocol.CMD_STRING cmd = Protocol.CMD_STRING.getInstance();
             System.out.println(LOG_READ_ACTION);
-            /*If valid, build and send the command string*/
             this.buildCommand(cmd, 
                     new String[]{ Protocol.AUTH.getInstance(this.username, this.password).toString(),
                                     Protocol.CONSTANTS.READ.toString() });
-            /*construct command string in the valid format*/
+            /*send command and process response*/
             response = this.connect(this.PORT, cmd);
             if (response.equals(Protocol.CONSTANTS.ERROR)) {
                 System.out.println(LOG_READ_ERROR);
             } else {
                 System.out.println(response);
             }
+            
         } else {
-            //TODO save messages to variables, no string literals
             System.out.println(NOT_LOGGED_IN);
         }
+        return response;
         
     }
     
+    /**{@inheritDoc}
+     * @see com.stephanlajaunie.projects.messaging.service.client.Client#sendAction(java.lang.String, java.lang.String)
+     */
+    @Override
     public String sendAction(final String command, String response) throws IOException {
         if (this.username != null && this.password != null) {
             Protocol.CMD_STRING cmd = Protocol.CMD_STRING.getInstance();
             boolean sending = true;
             String recipient = "";
             String msg = "";
-            /*Build command string in format 
-             * AUTH <username> <password> SEND <sender> RECIP <recipient> MSG <msg>
-             */
+            /*Operation loop- prompts user for the recipient followed by the message body*/
             while (sending) {
                 System.out.println(LOG_SEND_ACTION);
                 System.out.println(LOG_RECIP_OPTION);
@@ -131,6 +142,11 @@ public class ClientConsole implements Client {
                 msg = this.input.readLine();
                 sending = false;
             }
+            
+            /*Build the command string with the info received from the user*/
+            /*Build command string in format 
+             * AUTH <username> <password> SEND <sender> RECIP <recipient> MSG <msg>
+             */
             this.buildCommand(cmd, new String[]{
                     Protocol.AUTH.getInstance(this.username, this.password).toString(),
                     Protocol.CONSTANTS.SEND.toString(),
@@ -142,6 +158,7 @@ public class ClientConsole implements Client {
                     msg
             });
             
+            /*send command and process response*/
             response = this.connect(this.PORT, cmd);
             if (response.equals(Protocol.CONSTANTS.UNDELIVERABLE)) {
                 System.out.println(LOG_UNDELIVERABLE_MSG_ERROR);
@@ -153,11 +170,13 @@ public class ClientConsole implements Client {
         } else {
             System.out.println(NOT_LOGGED_IN);
         }
-        /*-create an inner loop prompting for sender and message
-         * compile into a command string to send to Server*/
         return response;
     }
     
+    /**{@inheritDoc}
+     * @see com.stephanlajaunie.projects.messaging.service.client.Client#forwardAction(java.lang.String, java.lang.String)
+     */
+    @Override
     public String forwardAction(final String command, String response) throws IOException{
         boolean forwarding = true;
         String recipient = null;
@@ -169,16 +188,20 @@ public class ClientConsole implements Client {
             fwdCommand = input.readLine();
             recipient = fwdCommand;
             
+            /*operation loop. Prompt user for recipient and then message number to be sent*/
             while(forwarding) {
                 System.out.println("Enter the message number of the message you wish to send. Enter CANCEL to exit"
                         + " this operation and enter READ command to see a list of available messages");
                 fwdCommand = input.readLine();
                 if (fwdCommand.equals("CANCEL")){
+                    /*exit the loop*/
                     forwarding = false;
                 } else {
                     try {
+                        /*Build command string in format:
+                         * AUTH <username> <password> FORWARD RECIP <recipient> <message-index>
+                         */
                         Protocol.CMD_STRING cmd = Protocol.CMD_STRING.getInstance();
-                        
                         Integer.parseInt(fwdCommand);
                         messageNumber = fwdCommand;
                         this.buildCommand(cmd, 
@@ -187,6 +210,8 @@ public class ClientConsole implements Client {
                                                Protocol.CONSTANTS.RECIP,
                                                recipient,
                                                messageNumber} );
+                        
+                        /*Transmit and handle the response*/
                         response = this.connect(this.PORT, cmd);
                         System.out.println("Command string: " + cmd);
                         if (response.equals(Protocol.CONSTANTS.UNDELIVERABLE)) {
@@ -200,26 +225,21 @@ public class ClientConsole implements Client {
                         }
                         forwarding = false;
                     } catch (NumberFormatException e) {
+                        /*If user enters a non-number*/
                         System.out.println(LOG_INVALID_OPTION);
-                        
                     }
-                    
                 }
             }
-            
         } else {
             System.out.println(NOT_LOGGED_IN);
         }
         
-        
-        /*Verify logged in, otherwise print NOT_LOGGED_IN message*/
-        /*Receive response and print message based on response*/
-        /*Build command string in format:
-         * AUTH <username> <password> FORWARD RECIP <recipient> <message-index>
-         */
         return response;
     }
     
+    /**{@inheritDoc}
+     * @see com.stephanlajaunie.projects.messaging.service.client.Client#deleteAction(java.lang.String, java.lang.String)
+     */
     public String deleteAction(final String command, String response) throws IOException {
         /*User will enter DELETE- Client prompt user to enter which message to delete
          * (corresponding to message/index number); Client will then display a confirm
@@ -232,15 +252,19 @@ public class ClientConsole implements Client {
         /*specifically capture entry number (or ALL) during confirm operations*/
         String delNumber;
         
-        //Check if logged in
+        /*Check if logged in*/
         if (this.username != null && this.password != null) {
             Protocol.CMD_STRING cmd = Protocol.CMD_STRING.getInstance();
+
+            /*main deletion operation loop*/
             while(deleting) {
                 System.out.println(LOG_DELETE_ACTION);
                 delInput = input.readLine();
+                /*User options are either a number, CANCEL or ALL*/
                 if (delInput.equals("ALL")) {
                 /*If user elects to delete all messages...*/
                     delNumber = delInput;
+                    /*inner loop for confirming ALL entry*/
                     while (confirming) {
                         /*confirm the entry*/
                         System.out.println(LOG_DELETE_CONFIRM_ALL);
@@ -251,17 +275,19 @@ public class ClientConsole implements Client {
                                     new String[] {(Protocol.AUTH.getInstance(this.username, this.password)).toString(),
                                                    Protocol.CONSTANTS.DELETE, 
                                                    delNumber } );
+                            
+                            /*Transmit and handle the response*/
                             response = this.connect(this.PORT, cmd);
-                            //TODO handle response
                             if (response.equals(Protocol.CONSTANTS.DELETED)) {
                                 System.out.println(LOG_CONFIRM_DELETE_ALL_RESP);
                             } else {
                                 System.out.println(LOG_DELETE_UNSUCCESSFUL);
                             }
+                            /*Exit both loops*/
                             confirming = false;
                             deleting = false;
                         } else if (delInput.equals("N")){
-                            /*cancel delete command*/
+                            /*cancel the delete command*/
                             System.out.println(LOG_DELETE_CONFIRM_CANCEL);
                             confirming = false;
                             deleting = false;
@@ -288,6 +314,8 @@ public class ClientConsole implements Client {
                                         new String[] {(Protocol.AUTH.getInstance(this.username, this.password)).toString(),
                                                        Protocol.CONSTANTS.DELETE.toString(), 
                                                        delNumber } );
+                                
+                                /*Transmit command and handle response*/
                                 response = this.connect(this.PORT, cmd);
                                 if (response.equals(Protocol.CONSTANTS.DELETED)) {
                                     System.out.println(String.format(LOG_CONFIRM_DELETE_SINGLE_RESP,delNumber));
@@ -296,6 +324,7 @@ public class ClientConsole implements Client {
                                 } else {
                                     System.out.println(LOG_DELETE_UNSUCCESSFUL);
                                 }
+                                /*exit the loops*/
                                 confirming = false;
                                 deleting = false;
                             } else if (delInput.equals("N")){
@@ -311,7 +340,6 @@ public class ClientConsole implements Client {
                         }
                     } catch (NumberFormatException e) {
                         System.out.println(LOG_INVALID_OPTION);
-                        
                     }
                 }
             }
@@ -330,6 +358,8 @@ public class ClientConsole implements Client {
             response = this.connect(this.PORT,
                             Protocol.AUTH.getInstance(  commandComponents[1],
                                                         commandComponents[2]));
+            
+            /*catching null pointer exception if server does not respond*/
             if (response != null) {
                 if (response.equals(Protocol.CONSTANTS.AUTH_VALID)) {
                     setCredentials(commandComponents[1],commandComponents[2]);
@@ -346,7 +376,6 @@ public class ClientConsole implements Client {
             } else {
                 System.out.println(LOG_NO_SERVER_RESPONSE);
             }
-            
         }
         return response;
     }
