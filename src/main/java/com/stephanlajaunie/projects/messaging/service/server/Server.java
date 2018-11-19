@@ -22,14 +22,14 @@ import com.stephanlajaunie.projects.messaging.dao.FileDAO;
 import com.stephanlajaunie.projects.messaging.message.Message;
 import com.stephanlajaunie.projects.messaging.service.Protocol;
 
-/**Encapsulates a server that listens for client connections containing messages. Once
+/**<p>Encapsulates a server that listens for client connections containing messages. Once
  * a message is received from a client via accept(), instantiates a new AccountManager
  * for operating on an account, and opens a new thread for those operations (with the subclass
- * Session);
- * runnable process will forward the message to the appropriate store(s) 
+ * Session)</p>
+ * <p>The internal Process sub-class (encapsulating the runnable process run by the thread) will forward the message to the appropriate store(s) 
  * based on the recipients contained in the message
  * Input stream will contain the message to be delivered
- * Output stream will contain the response to the client
+ * Output stream will contain the response to the client</p>
  * @author slajaunie
  *
  */
@@ -38,13 +38,18 @@ public class Server {
     private int port;
     public static final Logger log = LoggerFactory.getLogger(Server.class);
     
+    /**Constructor. Assigns the given port number
+     * @param port the port the Server Socket will be listening on 
+     */
     public Server(int port) {
         this.port = port;
     }
     
     /**Opens the server connection and listen for a client to connect.
-     * When a connection is accepted, opens a new instance of Session in a new Thread
+     * When a connection is accepted, opens a new instance of a Session in a new Thread
      * 
+     * @throws IOException if unable to open the socket. Shutsdown the Executor handling incoming
+     * threads
      */
     public void accept() throws IOException {
         boolean isActive = true;
@@ -58,44 +63,52 @@ public class Server {
         } catch (IOException e){
             log.info(LOG_CONFIRM_SHUTDOWN,e);
             service.shutdown();
-            
         }
     }
     
-    /**Encapsulates a Client-Server connection session. Once opened in a new Thread, reads data
-     * from the Socket input stream and then processes the data, which will involve writing
-     * data to the Socket output stream*/
-    private class Session implements Runnable, Serializable {
+    /**Encapsulates a Client-Server connection session. Once the Session is opened 
+     * in a new Thread, the Session reads data
+     * from the Socket input stream, processes the data, and then sends a response conforming
+     * with the given protocol to the Socket output stream
+     * @author slajaunie
+     *
+     */
+    private class Session implements Runnable {
 
-        private static final long serialVersionUID = 1L;
+        /*The client socket*/
         private Socket client;
         
-        private DAO dao = new FileDAO(); 
+        /*The associated data access object*/
+        private DAO dao = new FileDAO();
+        
+        /*The associated account manager which will administer the account via the DAO*/
         private AccountManager accountManager = new AccountManager(dao);
         
+        /**Instantiates a new Session
+         * @param client the client socket for this Session
+         */
         private Session(Socket client) {
             this.client = client;
         }
         
+        /**Accesses the input/output streams from the client and processes the command 
+         * from that input stream 
+         * @see java.lang.Runnable#run()
+         */
         @Override
         public void run() {
             
-            /*TODO figure out a way to keep connection open until client issues a terminate command
-             * (in order to preserve state like authenticated)- while(connectionOpen) or something
-             */
             log.info(LOG_CONFIRM_ACCEPT);
-            /*Get the i/o streams, for starters*/
             try {
                 OutputStream os = client.getOutputStream();
                 ObjectOutputStream oos = new ObjectOutputStream(os);
-                
                 ObjectInputStream ois = new ObjectInputStream(client.getInputStream());
                 
                /*Read the command from the client
-                 * TODO Need to determine a safer way to do this
+                 * TODO Need to determine a safer way to do this (Deserialization of untrusted data?)
                  */
                 Object obj = ois.readObject();
-                processObject(oos,obj);
+                processCommand(oos,obj);
             } catch (IOException e) {
                 log.warn(ERROR_STREAM_EXCEPTION,e);
             } catch (ClassNotFoundException e) {
@@ -103,7 +116,7 @@ public class Server {
             }
         }
         
-        private void processObject(ObjectOutputStream oos, Object obj) throws ClassNotFoundException, IOException {
+        private void processCommand(ObjectOutputStream oos, Object obj) throws ClassNotFoundException, IOException {
             String accountName = null;
             String password = null;
             
@@ -113,6 +126,7 @@ public class Server {
             if (!(obj instanceof Protocol)) {
                 log.warn(ERROR_CMD_NOT_RECOGNIZED);
                 throw new ClassNotFoundException(ERROR_CMD_NOT_RECOGNIZED);
+            /*If instance of Protocol is an AUTH command*/
             } else if (obj instanceof Protocol.AUTH) {
                 Protocol.AUTH authCommand = (Protocol.AUTH) obj;
                 accountName = authCommand.getUsername().toString();
@@ -121,33 +135,45 @@ public class Server {
                         Protocol.CONSTANTS.AUTH_INVALID: Protocol.CONSTANTS.AUTH_VALID; 
                 log.info(String.format(LOG_COMMAND_WRITTEN,response));
                 oos.writeObject(response);
+            /*If instance of Protocol is a DISCONNECT command*/
             } else if (obj instanceof Protocol.DISCONNECT) {
                 log.info(String.format(LOG_COMMAND_RECEIVED,Protocol.DISCONNECT.getValue()));
                 log.info(LOG_CONFIRM_DISCONNECT);
                 oos.writeObject(Protocol.DISCONNECT.getValue());
+            /*If instance of Protocol is a HELLO command*/
             } else if (obj instanceof Protocol.HELLO) {
                 log.info(String.format(LOG_COMMAND_RECEIVED,Protocol.HELLO.getValue()));
                 log.info(LOG_CONFIRM_HELLO);
                 response = String.format(Protocol.HELLO.getValue());
                 oos.writeObject(response);
+            /*If instance of Protocol is one of the concatenated command strings,
+             * e.g. AUTH <username> <password> SEND RECIP <recipient> MSG <message>
+             */
             } else if (obj instanceof Protocol.CMD_STRING) {
                 Protocol.CMD_STRING cmdString = (Protocol.CMD_STRING) obj;
                 String[] parsedCmd = cmdString.toString().split(" ");
                 
+                /*Will parse out the specific action in the command string, e.g. SEND, FORWARD, etc*/
                 String actionCmd = null;
+                /*Will parse out the message body, if applicable, e.g. in a SEND command*/
                 Message msg = null;
+                /*Will confirm if a message was successfully sent or forwarded*/
                 boolean saved = false;
+                /*Will parse out the message number specified, e.g. for a FORWARD command*/
                 String messageNumber = null;
+                /*Will parse out the recipient specified, e.g. in a SEND command*/ 
                 String recipient = null;
                 
+                /*Will parse the username and password for the session issuing the command*/
                 accountName = parsedCmd[1];
                 password = parsedCmd[2];
                 
-                
                 log.info(LOG_AUTH_VERIFYING);
+                /*If the AUTH portion of the command string provided an invalid username or password...*/
                 if (!this.authenticate(accountName, password)) {
                     response = Protocol.CONSTANTS.AUTH_INVALID;
                 } else {
+                    /*If AUTH verified, proceed to read the command*/
                     actionCmd = parsedCmd[3];
                     log.info(String.format(LOG_COMMAND_RECEIVED,actionCmd));
                     
@@ -177,6 +203,7 @@ public class Server {
                         String[] body = Arrays.copyOfRange(parsedCmd, 9, parsedCmd.length);
                         msg = new Message(sender,recipient,String.join(" ",body));
                         
+                        /*Will return true if message successfully stored, otherwise false*/
                         saved = accountManager.storeMessage(recipient, msg);
                         
                         if (saved) {
@@ -194,12 +221,13 @@ public class Server {
                         recipient = parsedCmd[5];
                         try {
                             int i = Integer.parseInt(messageNumber);
+                            /*Get the message specified by the messageNumber*/
                             msg = accountManager.getMessages(accountName).getMessage(i);
                             
                             /*append forwarded note to existing message data before storing*/
                             String txt = "FW: " + msg.getData();
                             msg.setData(txt);
-                            
+                            /*Will return true if message successfully stored, otherwise false*/
                             saved = accountManager.storeMessage(recipient, msg);
                             if (saved) {
                                 log.info(String.format(LOG_STORE_MSG_SUCCESS,recipient));
@@ -209,11 +237,15 @@ public class Server {
                                 oos.writeObject(new String(Protocol.CONSTANTS.UNDELIVERABLE));
                             }
                         } catch (NumberFormatException e) {
-                            /*Client should have logic to prevent even reaching this point,
+                            /*Did the command string contain a message number spec that wasn't 
+                             * actually a number? Client should have logic to prevent even reaching this point,
                              * but just in case...
                              */
                             oos.writeObject(Protocol.CONSTANTS.NOT_VALID_VALUE);
                         } catch (IndexOutOfBoundsException e) {
+                            /*Did command string contain a message number spec that was out of the 
+                             * bounds of the messages stored?
+                             */
                             log.warn(String.format(ERROR_INDEX_OUT_OF_BOUNDS, messageNumber));
                             oos.writeObject(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
                         }
@@ -231,10 +263,14 @@ public class Server {
                                  accountManager.removeMessage(accountName, i);
                                  oos.writeObject(Protocol.CONSTANTS.DELETED);
                              } catch (IndexOutOfBoundsException e) {
+                                 /*Did command string contain a message number spec that was out of the 
+                                  * bounds of the messages stored?
+                                  */
                                  log.warn(String.format(ERROR_INDEX_OUT_OF_BOUNDS, messageNumber));
                                  oos.writeObject(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
                              } catch (NumberFormatException e) {
-                                 /*Client should have logic to prevent even reaching this point,
+                                 /*Did the command string contain a message number spec that wasn't 
+                                  *actually a number? Client should have logic to prevent even reaching this point,
                                   * but just in case...
                                   */
                                  oos.writeObject(Protocol.CONSTANTS.NOT_VALID_VALUE);
@@ -251,17 +287,14 @@ public class Server {
                 
         }    
                 
-                /*Perform an action in resposne to the command
-                 * TODO starting with switch statement, may switch to command
-                 * patter later*/
-                
+        /*Access account manager to authenticate the account*/
         private boolean authenticate(String username, String password) {
             return this.accountManager.authenticateAccount(username, password);
         }
     }
         
     
-    
+    /*Run the server program...*/
     public static void main(String[] args) {
         int PORT = 4885;
         Server server = new Server(PORT);
