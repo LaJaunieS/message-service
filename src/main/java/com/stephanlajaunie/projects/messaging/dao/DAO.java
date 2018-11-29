@@ -10,6 +10,8 @@ import com.stephanlajaunie.projects.messaging.accounts.Account;
 public interface DAO {
     Account getAccount(String accountName);
     
+    public void deleteAccount(final String accountName);
+
     boolean persistAccount(Account account);
     
     boolean checkDuplicateUserName(String accountName);

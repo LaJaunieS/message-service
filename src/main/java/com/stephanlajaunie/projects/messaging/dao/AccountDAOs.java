@@ -7,15 +7,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-/**Encapsulates several methods utilized by specific com.stephanlajaunie.projects.messaging.dao.DAO
- * implementations and required by the AccountDao
- * interface, specifically for operations handling deleting a file or entire directory. 
+/**Implements several methods utilized by specific com.stephanlajaunie.projects.messaging.dao.DAO
+ * implementations and required by the DAO interface, specifically for operations handling deleting 
+ * a file or entire directory. 
  * Getters and Setters for persisted Accounts are handled by specific implementations
  * of AccountDao
  * @author slajaunie
  *
  */
-public class AccountDAOs {
+public abstract class AccountDAOs implements DAO {
     /*The parent directory where accounts will be stored*/
     private File parentDirectory= new File("target", "accounts");
     private static final Logger log = LoggerFactory.getLogger(AccountDAOs.class);
@@ -92,7 +92,7 @@ public class AccountDAOs {
      * @return a <code>File</code> encapsulating the parent directory used by the 
      * specific AccountDao implementation
      */
-    public File getParentDirectory() {
+    private File getParentDirectory() {
         return this.parentDirectory;
     }
 
@@ -103,7 +103,7 @@ public class AccountDAOs {
      * @param parentDirectory the parent directory to be used by the specific AccountDao
      * implementation 
      */
-    public void setParentDirectory(final File parentDirectory) {
+    private void setParentDirectory(final File parentDirectory) {
         this.parentDirectory = parentDirectory;
     }
 

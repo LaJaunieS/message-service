@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.stephanlajaunie.projects.messaging.accounts.Account;
 
-public class FileDAO extends AccountDAOs implements DAO {
+public class FileDAO extends AccountDAOs {
 
     /*The parent directory where accounts will be stored*/
     private static final File PARENT_DIRECTORY= new File("target", "accounts");
