@@ -87,26 +87,6 @@ public abstract class AccountDAOs implements DAO {
         }
     }
 
-    /**Returns the parent directory used by the specific AccountDao implementation.
-     * Property is a relative directory of "target/accounts" by default
-     * @return a <code>File</code> encapsulating the parent directory used by the 
-     * specific AccountDao implementation
-     */
-    private File getParentDirectory() {
-        return this.parentDirectory;
-    }
-
-
-    /**Sets the new parent directory used by the specific AccountDao implementation.
-     * Note that to avoid unintentional loss of data this method does nothing to 
-     * delete or clear the contents of the prior parent directory
-     * @param parentDirectory the parent directory to be used by the specific AccountDao
-     * implementation 
-     */
-    private void setParentDirectory(final File parentDirectory) {
-        this.parentDirectory = parentDirectory;
-    }
-
 
         
 }

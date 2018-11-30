@@ -116,7 +116,19 @@ public class Server {
             }
         }
         
-        private void processCommand(ObjectOutputStream oos, Object obj) throws ClassNotFoundException, IOException {
+        /**Contains the logic used to parse a command received in the input stream, perform
+         * a given action on the Account file/Account directory in response to that stream, and 
+         * sends a response via the Output Stream which a Client can use to determine if a commanded
+         * operation was successful
+         * @param oos The ObjectOutputStream to which a response will be written
+         * @param obj The Object representing the command received from the Client. If the Object is not
+         * an instance of com.stephanlajaunie.projects.service.Protocol, a 
+         * <code>ClassNotFoundException</code> will be thrown
+         * @throws ClassNotFoundException if the given Object <code>obj</code> is not an instance of 
+         * com.stephan.lajaunie.projects.server.Protocol
+         * @throws IOException if there is an error writing to the given ObjectOutputStream
+         */
+        private void processCommand(ObjectOutputStream oos, Object obj) throws ClassNotFoundException {
             String accountName = null;
             String password = null;
             
@@ -126,7 +138,7 @@ public class Server {
             if (!(obj instanceof Protocol)) {
                 log.warn(ERROR_CMD_NOT_RECOGNIZED);
                 throw new ClassNotFoundException(ERROR_CMD_NOT_RECOGNIZED);
-            /*If instance of Protocol is an AUTH command*/
+            /*If instance of Protocol is an AUTH command...*/
             } else if (obj instanceof Protocol.AUTH) {
                 Protocol.AUTH authCommand = (Protocol.AUTH) obj;
                 accountName = authCommand.getUsername().toString();
@@ -134,20 +146,20 @@ public class Server {
                 response = (!this.authenticate(accountName, password))?
                         Protocol.CONSTANTS.AUTH_INVALID: Protocol.CONSTANTS.AUTH_VALID; 
                 log.info(String.format(LOG_COMMAND_WRITTEN,response));
-                oos.writeObject(response);
-            /*If instance of Protocol is a DISCONNECT command*/
+                writeToStream(oos,response);
+            /*If instance of Protocol is a DISCONNECT command...*/
             } else if (obj instanceof Protocol.DISCONNECT) {
                 log.info(String.format(LOG_COMMAND_RECEIVED,Protocol.DISCONNECT.getValue()));
                 log.info(LOG_CONFIRM_DISCONNECT);
-                oos.writeObject(Protocol.DISCONNECT.getValue());
-            /*If instance of Protocol is a HELLO command*/
+                writeToStream(oos,Protocol.DISCONNECT.getValue());
+            /*If instance of Protocol is a HELLO command..*/
             } else if (obj instanceof Protocol.HELLO) {
                 log.info(String.format(LOG_COMMAND_RECEIVED,Protocol.HELLO.getValue()));
                 log.info(LOG_CONFIRM_HELLO);
                 response = String.format(Protocol.HELLO.getValue());
-                oos.writeObject(response);
+                writeToStream(oos,response);
             /*If instance of Protocol is one of the concatenated command strings,
-             * e.g. AUTH <username> <password> SEND RECIP <recipient> MSG <message>
+             * e.g. AUTH <username> <password> SEND RECIP <recipient> MSG <message>...
              */
             } else if (obj instanceof Protocol.CMD_STRING) {
                 Protocol.CMD_STRING cmdString = (Protocol.CMD_STRING) obj;
@@ -182,13 +194,13 @@ public class Server {
                         String messages = accountManager.getMessages(accountName).toString();
                         if (messages!=null) {
                             log.info(String.format(LOG_SEND_MESSAGES,accountName));
-                            oos.writeObject(messages);
+                            writeToStream(oos,messages);
                         } else {
                             /*If there's some internal issues retrieving account, don't want a 
                              * null pointer- but accountName should already have been validated by this point
                              */
                             log.info(String.format(ERROR_SEND_MESSAGES, accountName));
-                            oos.writeObject(Protocol.CONSTANTS.ERROR);
+                            writeToStream(oos,Protocol.CONSTANTS.ERROR);
                         }
                         break;
                     case "SEND":
@@ -208,10 +220,10 @@ public class Server {
                         
                         if (saved) {
                             log.info(String.format(LOG_STORE_MSG_SUCCESS,recipient));
-                            oos.writeObject(new String(Protocol.CONSTANTS.DELIVERED));
+                            writeToStream(oos,Protocol.CONSTANTS.DELIVERED);
                         } else {
                             log.info(String.format(ERROR_LOCATING_USER,recipient));
-                            oos.writeObject(new String(Protocol.CONSTANTS.UNDELIVERABLE));
+                            writeToStream(oos,Protocol.CONSTANTS.UNDELIVERABLE);
                         }
                         break;
                     case "FORWARD":
@@ -231,23 +243,23 @@ public class Server {
                             saved = accountManager.storeMessage(recipient, msg);
                             if (saved) {
                                 log.info(String.format(LOG_STORE_MSG_SUCCESS,recipient));
-                                oos.writeObject(new String(Protocol.CONSTANTS.DELIVERED));
+                                writeToStream(oos,Protocol.CONSTANTS.DELIVERED);
                             } else {
                                 log.info(String.format(ERROR_LOCATING_USER,recipient));
-                                oos.writeObject(new String(Protocol.CONSTANTS.UNDELIVERABLE));
+                                writeToStream(oos,Protocol.CONSTANTS.UNDELIVERABLE);
                             }
                         } catch (NumberFormatException e) {
                             /*Did the command string contain a message number spec that wasn't 
                              * actually a number? Client should have logic to prevent even reaching this point,
                              * but just in case...
                              */
-                            oos.writeObject(Protocol.CONSTANTS.NOT_VALID_VALUE);
+                            writeToStream(oos,Protocol.CONSTANTS.NOT_VALID_VALUE);
                         } catch (IndexOutOfBoundsException e) {
                             /*Did command string contain a message number spec that was out of the 
                              * bounds of the messages stored?
                              */
                             log.warn(String.format(ERROR_INDEX_OUT_OF_BOUNDS, messageNumber));
-                            oos.writeObject(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
+                            writeToStream(oos,Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
                         }
                         break;
                     case "DELETE":
@@ -256,30 +268,30 @@ public class Server {
                         
                          if (messageNumber.equals("ALL")) {
                              accountManager.clearMessages(accountName);
-                             oos.writeObject(Protocol.CONSTANTS.DELETED);
+                             writeToStream(oos,Protocol.CONSTANTS.DELETED);
                          } else {
                              try {
                                  int i = Integer.parseInt(messageNumber);
                                  accountManager.removeMessage(accountName, i);
-                                 oos.writeObject(Protocol.CONSTANTS.DELETED);
+                                 writeToStream(oos,Protocol.CONSTANTS.DELETED);
                              } catch (IndexOutOfBoundsException e) {
                                  /*Did command string contain a message number spec that was out of the 
                                   * bounds of the messages stored?
                                   */
                                  log.warn(String.format(ERROR_INDEX_OUT_OF_BOUNDS, messageNumber));
-                                 oos.writeObject(Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
+                                 writeToStream(oos,Protocol.CONSTANTS.INDEX_OUT_OF_BOUNDS);
                              } catch (NumberFormatException e) {
                                  /*Did the command string contain a message number spec that wasn't 
                                   *actually a number? Client should have logic to prevent even reaching this point,
                                   * but just in case...
                                   */
-                                 oos.writeObject(Protocol.CONSTANTS.NOT_VALID_VALUE);
+                                 writeToStream(oos,Protocol.CONSTANTS.NOT_VALID_VALUE);
                              }
                          }
                         break;
                     default: 
                         log.info(ERROR_CMD_NOT_RECOGNIZED);
-                        oos.writeObject(ERROR_CMD_NOT_RECOGNIZED);
+                        writeToStream(oos,ERROR_CMD_NOT_RECOGNIZED);
                         break;
                     }
                 }
@@ -287,9 +299,23 @@ public class Server {
                 
         }    
                 
+        
         /*Access account manager to authenticate the account*/
         private boolean authenticate(String username, String password) {
             return this.accountManager.authenticateAccount(username, password);
+        }
+        
+        /**Private method which handles IOException here on writeObject() so it doesn't have
+         * to be caught multiple times in processObject()
+         * @param out the ObjectOutputStream
+         * @param response the response to be written to <code>out</code>
+         */
+        private void writeToStream(ObjectOutputStream out, String response) {
+            try {
+                out.writeObject(response);
+            } catch (IOException e) {
+                log.warn("Unable to access output stream, underlying stream may have been closed",e);
+            }
         }
     }
         

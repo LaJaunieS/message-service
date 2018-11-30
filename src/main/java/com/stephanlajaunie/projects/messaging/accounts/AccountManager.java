@@ -12,26 +12,36 @@ import com.stephanlajaunie.projects.messaging.dao.DAO;
 import com.stephanlajaunie.projects.messaging.message.Message;
 import com.stephanlajaunie.projects.messaging.message.MessageStore;
 
-/**Entry point for interaction with an account. Authenticates account credentials-
+/**<p>The entry point for interaction with an Account. Can create a new Account, hashing 
+ * the given password for that Account. For an existing Account, authenticates account credentials-
  * from there a user or app can retrieve messages saved in the MessageStore
  * associated with that Account, or receive messages on the Account's behalf sent 
- * by a client
+ * by a client</p>
+ * <p>In the current implementation, when a Server accepts a connection from a Client hoping to 
+ * interact with a certain Account, the Server instantiates a new AccountManager. The Server will use
+ * that AccountManager to authenticate username and password information prior to allowing access to 
+ * read, send, forward or delete messages. But from the perspective of the AccountManager, it only
+ * gets, stores, or clears messages from a given Account</p> 
+ * 
  * @author slajaunie
  *
  */
 public class AccountManager {
     private DAO dao = null; 
     
-    /**hashing algorithm*/
+    /**The hashing algorithm*/
     private final String ALGORITHM = "SHA-256";
     
     private static final Logger log = LoggerFactory.getLogger(AccountManager.class);
     
-    /*Preserves authenticated state to determine if client/user allowed to access/delete
+    /**Preserves authenticated state to determine if client/user allowed to access/delete
      * messages from Account- authentication not necessary for server to send received emails
      * to a particular account*/ 
     private boolean authenticated = false;
     
+    /**Constructs a new AccountManager instance with the given implementation of <code>DAO</code>
+     * @param dao
+     */
     public AccountManager(DAO dao) {
         this.dao = dao;
     }

@@ -1,2 +1,6 @@
+com.stephanlajaunie.projects.messaging.accounts
+com.stephanlajaunie.projects.messaging.dao
+com.stephanlajaunie.projects.messaging.message
+com.stephanlajaunie.projects.messaging.service
 com.stephanlajaunie.projects.messaging.service.client
 com.stephanlajaunie.projects.messaging.service.server
